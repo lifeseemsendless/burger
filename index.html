@@ -113,7 +113,6 @@ nav.scrolled {
 .nav-logo-img {
   width: 36px; height: 36px; border-radius: 50%;
   object-fit: cover; border: 2px solid var(--yellow);
-
 }
 .nav-links { display: flex; gap: 44px; list-style: none; }
 .nav-links a {
@@ -209,10 +208,17 @@ nav.scrolled {
   flex: 1; display: flex; flex-direction: column;
   padding: 130px 64px 70px;
 }
+
+/* ─── HERO LAYOUT: 3 columns ─── */
 .hero-layout {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 60px; align-items: center; flex: 1; margin-top: 30px;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 40px;
+  align-items: center;
+  flex: 1;
+  margin-top: 30px;
 }
+
 .hero-headline {
   font-family: var(--font-display);
   font-size: clamp(5rem, 10vw, 12rem);
@@ -263,17 +269,49 @@ nav.scrolled {
 }
 .btn-ghost:hover { border-color: var(--yellow); color: var(--yellow); transform: translateY(-2px); }
 
+/* ─── HERO CENTER VIDEO COLUMN ─── */
+.hero-video-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: fadeUp 1s 0.3s both;
+}
+
+/* The video itself — transparent BG, no UI, blends with hero */
+.hero-burger-video {
+  width: 100%;
+  max-width: 460px;
+  /* No border-radius so it looks like it's floating in space */
+  border-radius: 0;
+  /* transparent background shows through */
+  background: transparent;
+  /* drop shadow gives depth without any UI chrome */
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.55)) drop-shadow(0 0 40px rgba(217,28,28,0.12));
+  animation: heroVideoFloat 5s ease-in-out infinite;
+  display: block;
+  /* No pointer events so no context menu on right-click accidentally */
+  pointer-events: none;
+}
+@keyframes heroVideoFloat {
+  0%,100% { transform: translateY(0) rotate(-0.5deg); }
+  50%      { transform: translateY(-12px) rotate(0.5deg); }
+}
+
+/* ─── HERO RIGHT VISUALS COLUMN ─── */
 .hero-visual {
-  position: relative; display: flex; align-items: center; justify-content: center;
-  animation: fadeUp 1s 0.4s both;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeUp 1s 0.5s both;
 }
 .hero-product-img {
-  width: 100%; max-width: 500px; border-radius: 28px;
-  filter: drop-shadow(0 40px 80px rgba(0,0,0,0.7));
+  width: 100%; max-width: 360px; border-radius: 24px;
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.6));
   animation: heroFloat 5s ease-in-out infinite;
   object-fit: cover; aspect-ratio: 4/3;
   background: rgba(255,255,255,0.04);
-  src: './images/hero-burger.jpeg';
 }
 @keyframes heroFloat {
   0%,100% { transform: translateY(0) rotate(-1deg); }
@@ -286,8 +324,8 @@ nav.scrolled {
   display: flex; align-items: center; gap: 10px;
   animation: chipFloat linear infinite;
 }
-.hero-chip-1 { top: 10%; left: -40px; animation-duration: 6s; animation-delay: -1s; }
-.hero-chip-2 { bottom: 15%; right: -30px; animation-duration: 7s; animation-delay: -3s; }
+.hero-chip-1 { top: 10%; left: -50px; animation-duration: 6s; animation-delay: -1s; }
+.hero-chip-2 { bottom: 15%; right: -20px; animation-duration: 7s; animation-delay: -3s; }
 @keyframes chipFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .chip-img {
   width: 40px; height: 40px; border-radius: 8px; object-fit: cover;
@@ -295,7 +333,7 @@ nav.scrolled {
 }
 .chip-label { font-family: var(--font-bold); font-size: 0.75rem; color: var(--white); letter-spacing: 1.5px; }
 .chip-sub { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
-.spinning-badge { position: absolute; bottom: -20px; left: 20px; width: 120px; height: 120px; cursor: pointer; }
+.spinning-badge { position: absolute; bottom: -20px; right: 10px; width: 120px; height: 120px; cursor: pointer; }
 .spinning-badge svg { animation: rotateBadge 12s linear infinite; }
 @keyframes rotateBadge { to { transform: rotate(360deg); } }
 .badge-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
@@ -765,10 +803,12 @@ footer { background: var(--dark2); padding: 90px 64px 44px; border-top: 1px soli
   .nav-hamburger { display: flex; }
 
   .hero-main { padding: 110px 32px 50px; }
-  .hero-layout { grid-template-columns: 1fr; gap: 40px; }
+  /* On tablet: text left, video right — 2 cols, hide the product img col */
+  .hero-layout { grid-template-columns: 1fr 1fr; gap: 30px; }
   .hero-headline { font-size: clamp(4rem, 12vw, 8rem); }
   .hero-visual { display: none; }
   .hero-tagline { max-width: 100%; }
+  .hero-burger-video { max-width: 100%; }
 
   #about { padding: 80px 32px; }
   .about-grid { grid-template-columns: 1fr; gap: 50px; }
@@ -808,11 +848,16 @@ footer { background: var(--dark2); padding: 90px 64px 44px; border-top: 1px soli
   .loader-logo { font-size: 3.5rem; }
 
   .hero-main { padding: 100px 20px 40px; }
+  /* On mobile: stack to single column, video shows below headline */
+  .hero-layout { grid-template-columns: 1fr; gap: 24px; }
   .hero-headline { font-size: clamp(3.2rem, 14vw, 5rem); }
   .hero-tagline { font-size: 0.9rem; }
   .btn-primary, .btn-ghost { padding: 14px 28px; font-size: 0.82rem; }
   .hero-btns { flex-direction: column; gap: 12px; }
   .hero-btns .btn-primary, .hero-btns .btn-ghost { width: 100%; text-align: center; }
+  .hero-video-col { order: -1; } /* video above text on mobile */
+  .hero-burger-video { max-width: 280px; }
+  .hero-visual { display: none; }
 
   #about { padding: 60px 20px; }
   .about-img-stack { height: 300px; }
@@ -884,7 +929,7 @@ footer { background: var(--dark2); padding: 90px 64px 44px; border-top: 1px soli
 <div id="cursor"></div>
 <div id="cursor-trail"></div>
 
-<!-- VIDEO MODAL -->
+<!-- VIDEO MODAL (for Watch Our Story) -->
 <div id="videoModal">
   <div class="video-modal-inner">
     <video id="promoVideo" controls playsinline>
@@ -952,6 +997,8 @@ footer { background: var(--dark2); padding: 90px 64px 44px; border-top: 1px soli
     </h1>
 
     <div class="hero-layout">
+
+      <!-- LEFT: Text & CTAs -->
       <div class="hero-meta">
         <p class="hero-tagline">Born on the grill. Raised on obsessive flavor. Every bite is hand-crafted to change your whole day.</p>
         <div class="hero-btns">
@@ -960,6 +1007,20 @@ footer { background: var(--dark2); padding: 90px 64px 44px; border-top: 1px soli
         </div>
       </div>
 
+      <!-- CENTER: Explode-view burger video — no controls, blends into hero bg -->
+      <div class="hero-video-col">
+        <video
+          class="hero-burger-video"
+          id="heroExplodeVideo"
+          src="burgerexp.mp4"
+          autoplay
+          muted
+          playsinline
+          preload="auto"
+        ></video>
+      </div>
+
+      <!-- RIGHT: Floating product image + chips + spinning badge -->
       <div class="hero-visual">
         <img class="hero-product-img"
           src="mainburger.jpeg"
@@ -997,6 +1058,7 @@ footer { background: var(--dark2); padding: 90px 64px 44px; border-top: 1px soli
           </div>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -1483,6 +1545,37 @@ window.addEventListener('load',()=>{
   }, 1700);
 });
 
+// ─── HERO EXPLODE VIDEO: play → pause at end → resume after 1.4s → loop ───
+(function() {
+  const vid = document.getElementById('heroExplodeVideo');
+  if (!vid) return;
+
+  // Ensure no browser UI ever appears
+  vid.controls = false;
+  vid.disablePictureInPicture = true;
+  vid.setAttribute('disablepictureinpicture', '');
+  vid.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
+
+  let pauseTimer = null;
+
+  vid.addEventListener('ended', () => {
+    // Video finished — it's in the fully-exploded state. Hold for 1.4s then restart.
+    clearTimeout(pauseTimer);
+    pauseTimer = setTimeout(() => {
+      vid.currentTime = 0;
+      vid.play().catch(() => {}); // catch autoplay policy errors silently
+    }, 1400);
+  });
+
+  // Kick off playback as soon as enough data is available
+  vid.addEventListener('canplay', () => {
+    vid.play().catch(() => {});
+  });
+
+  // Prevent right-click context menu on the video (keeps it feeling native)
+  vid.addEventListener('contextmenu', e => e.preventDefault());
+})();
+
 // ─── SCROLL REVEAL ───
 const revealObs = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{
@@ -1577,7 +1670,7 @@ function submitOrder(btn){
   setTimeout(()=>{ btn.textContent='Place Order Now'; btn.style.background=''; btn.style.color=''; },4000);
 }
 
-// ─── VIDEO MODAL ───
+// ─── VIDEO MODAL (Watch Our Story) ───
 function openVideo(){
   document.getElementById('videoModal').classList.add('open');
   document.getElementById('promoVideo').play();
