@@ -55,7 +55,11 @@ body::after {
   transform: translate(-50%, -50%);
   transition: all 0.13s ease;
 }
-body:has(a:hover) #cursor, body:has(button:hover) #cursor { width: 32px; height: 32px; }
+@media (pointer: coarse) {
+  #cursor, #cursor-trail { display: none; }
+  body { cursor: auto; }
+  button, a { cursor: pointer; }
+}
 
 /* ─── PAGE LOADER ─── */
 #loader {
@@ -83,9 +87,7 @@ body:has(a:hover) #cursor, body:has(button:hover) #cursor { width: 32px; height:
   font-family: var(--font-display); font-size: 1rem;
   color: rgba(255,255,255,0.35); letter-spacing: 4px;
 }
-@keyframes loaderPulse {
-  0%,100% { opacity: 1; } 50% { opacity: 0.6; }
-}
+@keyframes loaderPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 @keyframes loaderFill { from { width:0; } to { width:100%; } }
 
 /* ─── NAVBAR ─── */
@@ -111,11 +113,7 @@ nav.scrolled {
 .nav-logo-img {
   width: 36px; height: 36px; border-radius: 50%;
   object-fit: cover; border: 2px solid var(--yellow);
-  /*
-    LOGO IMAGE
-    Place your logo/icon image file path here:
-    src="./images/logo-icon.png"
-  */
+  src: './images/logo-icon.jpeg';
 }
 .nav-links { display: flex; gap: 44px; list-style: none; }
 .nav-links a {
@@ -136,7 +134,7 @@ nav.scrolled {
   border: none; padding: 12px 30px;
   font-family: var(--font-bold); font-size: 0.85rem;
   letter-spacing: 2px; text-transform: uppercase;
-  cursor: none; border-radius: 50px;
+  cursor: pointer; border-radius: 50px;
   transition: all 0.35s; position: relative; overflow: hidden;
 }
 .nav-cta::after {
@@ -147,6 +145,38 @@ nav.scrolled {
 .nav-cta:hover::after { transform: scaleX(1); transform-origin: left; }
 .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 30px rgba(255,184,0,0.35); }
 
+/* Mobile hamburger */
+.nav-hamburger {
+  display: none; flex-direction: column; gap: 5px;
+  background: none; border: none; cursor: pointer; padding: 4px;
+}
+.nav-hamburger span {
+  display: block; width: 24px; height: 2px;
+  background: var(--white); border-radius: 2px;
+  transition: all 0.3s;
+}
+.nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity: 0; }
+.nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Mobile nav drawer */
+.nav-drawer {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(26,10,0,0.97); z-index: 999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 36px;
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.35s, visibility 0.35s;
+}
+.nav-drawer.open { opacity: 1; visibility: visible; }
+.nav-drawer a {
+  font-family: var(--font-display); font-size: 3rem;
+  color: var(--white); text-decoration: none; letter-spacing: 4px;
+  transition: color 0.2s;
+}
+.nav-drawer a:hover { color: var(--yellow); }
+.nav-drawer .nav-cta { font-size: 1rem; padding: 14px 40px; }
+
 /* ─── HERO ─── */
 #hero {
   min-height: 100vh;
@@ -154,17 +184,9 @@ nav.scrolled {
   position: relative; overflow: hidden;
   display: flex; flex-direction: column;
 }
-
-/* Cinematic hero background image */
 .hero-bg {
   position: absolute; inset: 0;
-  /*
-    HERO BACKGROUND IMAGE
-    Replace with your actual hero background:
-    background-image: url('./images/hero-bg.jpg');
-    Recommended: dark, moody kitchen/grill shot
-  */
-  background-image: none;
+  background-image: url('.mainburger.jpeg');
   background-size: cover; background-position: center;
   transform: scale(1.08);
   transition: transform 8s cubic-bezier(0.4,0,0.2,1);
@@ -173,43 +195,30 @@ nav.scrolled {
 #hero.loaded .hero-bg { transform: scale(1); }
 .hero-bg-overlay {
   position: absolute; inset: 0;
-  background: linear-gradient(
-    105deg,
-    rgba(26,10,0,0.88) 0%,
-    rgba(26,10,0,0.6) 50%,
-    rgba(180,0,0,0.3) 100%
-  );
+  background: linear-gradient(105deg, rgba(26,10,0,0.88) 0%, rgba(26,10,0,0.6) 50%, rgba(180,0,0,0.3) 100%);
 }
 .hero-bg-text {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-family: var(--font-display);
   font-size: 30vw; color: rgba(255,255,255,0.03);
-  white-space: nowrap; pointer-events: none;
-  letter-spacing: -10px;
+  white-space: nowrap; pointer-events: none; letter-spacing: -10px;
 }
-
 .hero-main {
   position: relative; z-index: 2;
   flex: 1; display: flex; flex-direction: column;
   padding: 130px 64px 70px;
 }
-
-/* Split layout */
 .hero-layout {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 60px; align-items: center; flex: 1; margin-top: 30px;
 }
-
 .hero-headline {
   font-family: var(--font-display);
   font-size: clamp(5rem, 10vw, 12rem);
-  color: var(--white); line-height: 0.86;
-  letter-spacing: -1px;
+  color: var(--white); line-height: 0.86; letter-spacing: -1px;
 }
-.hero-headline .word {
-  display: block; overflow: hidden;
-}
+.hero-headline .word { display: block; overflow: hidden; }
 .hero-headline .word-inner {
   display: block;
   animation: wordReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -222,19 +231,14 @@ nav.scrolled {
   to   { transform: translateY(0) skewY(0); opacity: 1; }
 }
 .hero-dot { color: var(--yellow); }
-
-.hero-meta {
-  margin-top: 36px;
-  animation: fadeUp 1s 0.8s both;
-}
+.hero-meta { margin-top: 36px; animation: fadeUp 1s 0.8s both; }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(30px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .hero-tagline {
   font-size: 1rem; color: rgba(255,255,255,0.5);
-  line-height: 1.8; max-width: 360px; margin-bottom: 36px;
-  letter-spacing: 0.3px;
+  line-height: 1.8; max-width: 360px; margin-bottom: 36px; letter-spacing: 0.3px;
 }
 .hero-btns { display: flex; gap: 16px; flex-wrap: wrap; }
 .btn-primary {
@@ -242,13 +246,11 @@ nav.scrolled {
   padding: 16px 38px; border: none; border-radius: 50px;
   font-family: var(--font-bold); font-size: 0.9rem;
   letter-spacing: 2px; text-transform: uppercase;
-  cursor: none; transition: all 0.35s;
-  position: relative; overflow: hidden;
+  cursor: pointer; transition: all 0.35s; position: relative; overflow: hidden;
 }
 .btn-primary::after {
   content: ''; position: absolute; inset: 0;
-  background: var(--white); opacity: 0;
-  transition: opacity 0.3s;
+  background: var(--white); opacity: 0; transition: opacity 0.3s;
 }
 .btn-primary:hover::after { opacity: 0.15; }
 .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(255,184,0,0.4); }
@@ -257,36 +259,26 @@ nav.scrolled {
   padding: 15px 36px; border: 1.5px solid rgba(255,255,255,0.25); border-radius: 50px;
   font-family: var(--font-bold); font-size: 0.9rem;
   letter-spacing: 2px; text-transform: uppercase;
-  cursor: none; transition: all 0.35s;
+  cursor: pointer; transition: all 0.35s;
 }
 .btn-ghost:hover { border-color: var(--yellow); color: var(--yellow); transform: translateY(-2px); }
 
-/* Hero right — main product shot */
 .hero-visual {
   position: relative; display: flex; align-items: center; justify-content: center;
   animation: fadeUp 1s 0.4s both;
 }
 .hero-product-img {
-  width: 100%; max-width: 500px;
-  border-radius: 28px;
+  width: 100%; max-width: 500px; border-radius: 28px;
   filter: drop-shadow(0 40px 80px rgba(0,0,0,0.7));
   animation: heroFloat 5s ease-in-out infinite;
-  object-fit: cover;
-  aspect-ratio: 4/3;
+  object-fit: cover; aspect-ratio: 4/3;
   background: rgba(255,255,255,0.04);
-  /*
-    HERO MAIN PRODUCT IMAGE
-    src="./images/hero-burger.jpg"
-    Recommended: hero shot of your signature burger, overhead or 45° angle
-    High contrast, on dark surface or pure BG
-  */
+  src: '.shake1.jpeg';
 }
 @keyframes heroFloat {
   0%,100% { transform: translateY(0) rotate(-1deg); }
   50%      { transform: translateY(-14px) rotate(1deg); }
 }
-
-/* Floating accent chips */
 .hero-chip {
   position: absolute; background: rgba(255,255,255,0.08);
   backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.12);
@@ -296,53 +288,29 @@ nav.scrolled {
 }
 .hero-chip-1 { top: 10%; left: -40px; animation-duration: 6s; animation-delay: -1s; }
 .hero-chip-2 { bottom: 15%; right: -30px; animation-duration: 7s; animation-delay: -3s; }
-@keyframes chipFloat {
-  0%,100% { transform: translateY(0); }
-  50%      { transform: translateY(-10px); }
-}
+@keyframes chipFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 .chip-img {
   width: 40px; height: 40px; border-radius: 8px; object-fit: cover;
   background: rgba(255,255,255,0.06);
-  /*
-    CHIP IMAGES (small accent shots)
-    chip-1 src="./images/chip-fries.jpg"
-    chip-2 src="./images/chip-drink.jpg"
-  */
 }
 .chip-label { font-family: var(--font-bold); font-size: 0.75rem; color: var(--white); letter-spacing: 1.5px; }
 .chip-sub { font-size: 0.65rem; color: rgba(255,255,255,0.45); margin-top: 2px; }
-
-/* Spinning badge */
-.spinning-badge {
-  position: absolute; bottom: -20px; left: 20px;
-  width: 120px; height: 120px;
-  cursor: none;
-}
+.spinning-badge { position: absolute; bottom: -20px; left: 20px; width: 120px; height: 120px; cursor: pointer; }
 .spinning-badge svg { animation: rotateBadge 12s linear infinite; }
 @keyframes rotateBadge { to { transform: rotate(360deg); } }
-.badge-center {
-  position: absolute; inset: 0; display: flex;
-  align-items: center; justify-content: center;
-}
+.badge-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .badge-inner {
   width: 46px; height: 46px; border-radius: 50%;
-  background: var(--yellow); display: flex;
-  align-items: center; justify-content: center;
-  transition: transform 0.3s;
-  border: none; cursor: none;
+  background: var(--yellow); display: flex; align-items: center; justify-content: center;
+  transition: transform 0.3s; border: none; cursor: pointer;
 }
 .badge-inner:hover { transform: scale(1.15); }
-.badge-icon { width: 20px; height: 20px; object-fit: contain;
-  /*
-    PLAY/BADGE ICON  src="./images/play-icon.svg"
-  */
-}
+.badge-icon { width: 20px; height: 20px; object-fit: contain; }
 
 /* ─── TICKER ─── */
 .hero-ticker {
-  background: var(--red-dark);
-  padding: 14px 0; overflow: hidden; position: relative; z-index: 3;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  background: var(--red-dark); padding: 14px 0; overflow: hidden;
+  position: relative; z-index: 3; border-top: 1px solid rgba(255,255,255,0.08);
 }
 .ticker-inner {
   display: flex; gap: 60px;
@@ -359,21 +327,10 @@ nav.scrolled {
 .ticker-img {
   width: 32px; height: 32px; border-radius: 6px; object-fit: cover;
   vertical-align: middle; border: 1px solid rgba(255,255,255,0.15);
-  /*
-    TICKER ITEM THUMBNAILS
-    Each ticker item can have a small food thumbnail:
-    src="./images/ticker-double-trouble.jpg"
-    src="./images/ticker-pizza.jpg"  etc.
-    Set display:none if you don't want images in ticker
-  */
 }
 
 /* ─── ABOUT ─── */
-#about {
-  background: var(--cream);
-  padding: 130px 64px;
-  position: relative; overflow: hidden;
-}
+#about { background: var(--cream); padding: 130px 64px; position: relative; overflow: hidden; }
 #about::before {
   content: 'SINCE\A2018'; white-space: pre;
   position: absolute; right: -60px; top: 50%;
@@ -381,172 +338,87 @@ nav.scrolled {
   font-family: var(--font-display); font-size: 14vw;
   color: rgba(26,10,0,0.04); pointer-events: none; line-height: 1;
 }
-.about-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 90px; align-items: center;
-}
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 90px; align-items: center; }
 .about-label {
   font-family: var(--font-body); font-weight: 600;
   letter-spacing: 4px; text-transform: uppercase;
   color: var(--red); font-size: 0.75rem; margin-bottom: 18px;
   display: flex; align-items: center; gap: 10px;
 }
-.about-label::before {
-  content: ''; width: 30px; height: 1.5px; background: var(--red);
-}
+.about-label::before { content: ''; width: 30px; height: 1.5px; background: var(--red); }
 .about-headline {
-  font-family: var(--font-display);
-  font-size: clamp(3.5rem, 5.5vw, 6.5rem);
-  color: var(--dark); line-height: 0.88;
-  margin-bottom: 32px;
+  font-family: var(--font-display); font-size: clamp(3.5rem, 5.5vw, 6.5rem);
+  color: var(--dark); line-height: 0.88; margin-bottom: 32px;
 }
 .about-headline em { color: var(--red); font-style: normal; }
-.about-text {
-  font-size: 1.05rem; line-height: 1.85;
-  color: rgba(26,10,0,0.65); max-width: 500px; margin-bottom: 48px;
-}
+.about-text { font-size: 1.05rem; line-height: 1.85; color: rgba(26,10,0,0.65); max-width: 500px; margin-bottom: 48px; }
 .about-stats { display: flex; gap: 48px; }
 .stat { text-align: left; }
-.stat-num {
-  font-family: var(--font-display); font-size: 4rem;
-  color: var(--red); line-height: 1;
-}
-.stat-label {
-  font-size: 0.75rem; letter-spacing: 2.5px;
-  text-transform: uppercase; color: rgba(26,10,0,0.4); margin-top: 6px;
-}
-
-/* About image stack */
+.stat-num { font-family: var(--font-display); font-size: 4rem; color: var(--red); line-height: 1; }
+.stat-label { font-size: 0.75rem; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(26,10,0,0.4); margin-top: 6px; }
 .about-img-stack { position: relative; height: 560px; }
 .about-img-main {
   position: absolute; right: 0; top: 0;
   width: 82%; height: 85%; border-radius: 24px; overflow: hidden;
   box-shadow: 0 40px 80px rgba(26,10,0,0.18);
 }
-.about-img-main img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform 0.7s ease;
-  /*
-    ABOUT SECTION MAIN IMAGE
-    src="./images/about-kitchen.jpg"
-    Recommended: kitchen atmosphere, grill action, team shot
-  */
-}
+.about-img-main img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.7s ease; }
 .about-img-main:hover img { transform: scale(1.04); }
 .about-img-small {
   position: absolute; left: 0; bottom: 0;
   width: 46%; height: 46%; border-radius: 20px; overflow: hidden;
-  box-shadow: 0 20px 50px rgba(26,10,0,0.2);
-  border: 4px solid var(--cream);
+  box-shadow: 0 20px 50px rgba(26,10,0,0.2); border: 4px solid var(--cream);
 }
-.about-img-small img {
-  width: 100%; height: 100%; object-fit: cover;
-  /*
-    ABOUT SECTION SMALL ACCENT IMAGE
-    src="./images/about-burger-closeup.jpg"
-    Recommended: extreme close-up of a burger or ingredient
-  */
-}
+.about-img-small img { width: 100%; height: 100%; object-fit: cover; }
 .about-badge {
   position: absolute; top: -20px; left: 30%;
   background: var(--yellow); color: var(--dark);
   padding: 14px 22px; border-radius: 16px;
   font-family: var(--font-bold); font-size: 1rem;
-  letter-spacing: 1px; box-shadow: 0 10px 30px rgba(255,184,0,0.3);
-  white-space: nowrap;
+  letter-spacing: 1px; box-shadow: 0 10px 30px rgba(255,184,0,0.3); white-space: nowrap;
 }
 
 /* ─── MENU ─── */
-#menu {
-  background: var(--dark);
-  padding: 130px 64px;
-  position: relative; overflow: hidden;
-}
+#menu { background: var(--dark); padding: 130px 64px; position: relative; overflow: hidden; }
 #menu::before {
-  content: 'MENU';
-  position: absolute; right: -100px; top: 50%;
+  content: 'MENU'; position: absolute; right: -100px; top: 50%;
   transform: translateY(-50%) rotate(90deg);
   font-family: var(--font-display); font-size: 22vw;
   color: rgba(255,255,255,0.025); pointer-events: none; white-space: nowrap;
 }
-.section-header {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  margin-bottom: 60px;
-}
-.section-title {
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 6vw, 7.5rem);
-  color: var(--white); line-height: 0.88;
-}
-.section-subtitle {
-  font-size: 0.75rem; letter-spacing: 4px;
-  text-transform: uppercase; color: var(--yellow);
-  margin-bottom: 14px; display: block;
-}
+.section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 60px; }
+.section-title { font-family: var(--font-display); font-size: clamp(3rem, 6vw, 7.5rem); color: var(--white); line-height: 0.88; }
+.section-subtitle { font-size: 0.75rem; letter-spacing: 4px; text-transform: uppercase; color: var(--yellow); margin-bottom: 14px; display: block; }
 .section-see-all {
-  font-family: var(--font-body); font-weight: 600;
-  color: var(--yellow); text-decoration: none;
-  letter-spacing: 2px; text-transform: uppercase;
+  font-family: var(--font-body); font-weight: 600; color: var(--yellow);
+  text-decoration: none; letter-spacing: 2px; text-transform: uppercase;
   font-size: 0.8rem; padding-bottom: 3px;
-  border-bottom: 1px solid rgba(255,184,0,0.4);
-  transition: all 0.3s;
+  border-bottom: 1px solid rgba(255,184,0,0.4); transition: all 0.3s;
 }
 .section-see-all:hover { color: var(--white); border-color: var(--white); }
-
-.menu-tabs {
-  display: flex; gap: 10px; margin-bottom: 54px; flex-wrap: wrap;
-}
+.menu-tabs { display: flex; gap: 10px; margin-bottom: 54px; flex-wrap: wrap; }
 .menu-tab {
   padding: 10px 24px; border-radius: 50px;
   border: 1.5px solid rgba(255,255,255,0.12);
   background: transparent; color: rgba(255,255,255,0.45);
   font-family: var(--font-body); font-weight: 600;
   font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;
-  cursor: none; transition: all 0.3s;
+  cursor: pointer; transition: all 0.3s;
 }
-.menu-tab.active, .menu-tab:hover {
-  background: var(--yellow); border-color: var(--yellow); color: var(--dark);
-}
-
-.menu-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 24px;
-}
-
+.menu-tab.active, .menu-tab:hover { background: var(--yellow); border-color: var(--yellow); color: var(--dark); }
+.menu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
 .menu-card {
-  background: rgba(255,255,255,0.04);
-  border-radius: 20px; overflow: hidden;
+  background: rgba(255,255,255,0.04); border-radius: 20px; overflow: hidden;
   border: 1px solid rgba(255,255,255,0.07);
-  transition: all 0.45s cubic-bezier(0.16,1,0.3,1);
-  cursor: none; position: relative;
+  transition: all 0.45s cubic-bezier(0.16,1,0.3,1); cursor: pointer; position: relative;
 }
 .menu-card:hover {
-  transform: translateY(-14px);
-  border-color: rgba(255,184,0,0.4);
+  transform: translateY(-14px); border-color: rgba(255,184,0,0.4);
   box-shadow: 0 30px 70px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,184,0,0.15);
 }
-.menu-card-img {
-  height: 210px; position: relative; overflow: hidden;
-}
-.menu-card-img img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform 0.6s ease;
-  display: block;
-  /*
-    MENU CARD IMAGES — set src for each item:
-    Double Trouble:  src="./images/menu-double-trouble.jpg"
-    Mushroom Burger: src="./images/menu-mushroom.jpg"
-    Hawaiian Burger: src="./images/menu-hawaiian.jpg"
-    Veggie Delight:  src="./images/menu-veggie.jpg"
-    BBQ Blast Pizza: src="./images/menu-bbq-pizza.jpg"
-    Pepperoni Beast: src="./images/menu-pepperoni.jpg"
-    Golden Fries:    src="./images/menu-fries.jpg"
-    Frosted Shake:   src="./images/menu-shake.jpg"
-  */
-}
+.menu-card-img { height: 210px; position: relative; overflow: hidden; }
+.menu-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; display: block; }
 .menu-card:hover .menu-card-img img { transform: scale(1.1); }
-/* Gradient over image */
 .menu-card-img::after {
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(to top, rgba(26,10,0,0.5) 0%, transparent 60%);
@@ -559,49 +431,30 @@ nav.scrolled {
 }
 .menu-card-body { padding: 20px; }
 .menu-card-name {
-  font-family: var(--font-bold); font-size: 0.95rem;
-  color: var(--white); letter-spacing: 2px;
-  text-transform: uppercase; margin-bottom: 6px;
+  font-family: var(--font-bold); font-size: 0.95rem; color: var(--white);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px;
 }
-.menu-card-desc {
-  font-size: 0.78rem; color: rgba(255,255,255,0.35);
-  line-height: 1.5; margin-bottom: 18px;
-}
+.menu-card-desc { font-size: 0.78rem; color: rgba(255,255,255,0.35); line-height: 1.5; margin-bottom: 18px; }
 .menu-card-footer { display: flex; align-items: center; justify-content: space-between; }
 .menu-card-price { font-family: var(--font-display); font-size: 1.7rem; color: var(--yellow); }
 .menu-card-price span { font-size: 0.85rem; color: rgba(255,255,255,0.25); margin-left: 3px; }
 .add-btn {
   width: 40px; height: 40px; border-radius: 50%;
-  background: var(--yellow); border: none;
-  color: var(--dark); font-size: 1.3rem; font-weight: 800;
-  cursor: none; transition: all 0.3s;
+  background: var(--yellow); border: none; color: var(--dark);
+  font-size: 1.3rem; font-weight: 800; cursor: pointer; transition: all 0.3s;
   display: flex; align-items: center; justify-content: center;
 }
 .add-btn:hover { background: var(--white); transform: rotate(90deg) scale(1.1); }
 
 /* ─── BUNDLES ─── */
-#bundles {
-  background: var(--cream); padding: 130px 64px; position: relative;
-}
-.bundles-intro {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 40px; align-items: end; margin-bottom: 70px;
-}
-.bundles-title {
-  font-family: var(--font-display);
-  font-size: clamp(4rem, 7.5vw, 9rem);
-  color: var(--dark); line-height: 0.85;
-}
-.bundles-desc {
-  font-size: 1rem; color: rgba(26,10,0,0.55);
-  line-height: 1.8; max-width: 380px; align-self: end;
-}
+#bundles { background: var(--cream); padding: 130px 64px; position: relative; }
+.bundles-intro { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: end; margin-bottom: 70px; }
+.bundles-title { font-family: var(--font-display); font-size: clamp(4rem, 7.5vw, 9rem); color: var(--dark); line-height: 0.85; }
+.bundles-desc { font-size: 1rem; color: rgba(26,10,0,0.55); line-height: 1.8; max-width: 380px; align-self: end; }
 .bundles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-
 .bundle-card {
-  border-radius: 26px; padding: 38px;
-  position: relative; overflow: hidden;
-  cursor: none; transition: all 0.45s cubic-bezier(0.16,1,0.3,1);
+  border-radius: 26px; padding: 38px; position: relative; overflow: hidden;
+  cursor: pointer; transition: all 0.45s cubic-bezier(0.16,1,0.3,1);
   display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 24px;
 }
 .bundle-card:hover { transform: translateY(-8px); box-shadow: 0 40px 80px rgba(0,0,0,0.14); }
@@ -614,11 +467,9 @@ nav.scrolled {
   pointer-events: none;
 }
 .bundle-badge {
-  background: rgba(0,0,0,0.2); color: var(--white);
-  font-family: var(--font-bold); font-size: 0.7rem;
-  letter-spacing: 3px; padding: 6px 14px; border-radius: 50px;
-  display: inline-flex; align-items: center; gap: 6px;
-  margin-bottom: 14px; width: fit-content;
+  background: rgba(0,0,0,0.2); color: var(--white); font-family: var(--font-bold);
+  font-size: 0.7rem; letter-spacing: 3px; padding: 6px 14px; border-radius: 50px;
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px; width: fit-content;
 }
 .bundle-card-yellow .bundle-badge { color: var(--dark); }
 .bundle-name { font-family: var(--font-display); font-size: 3.8rem; line-height: 0.88; margin-bottom: 18px; }
@@ -651,103 +502,55 @@ nav.scrolled {
 .bundle-order-btn {
   margin-top: 24px; padding: 13px 26px; border-radius: 50px; border: none;
   font-family: var(--font-bold); font-size: 0.82rem; letter-spacing: 2px;
-  text-transform: uppercase; cursor: none; transition: all 0.3s;
+  text-transform: uppercase; cursor: pointer; transition: all 0.3s;
 }
 .bundle-card-red .bundle-order-btn { background: var(--white); color: var(--red); }
 .bundle-card-yellow .bundle-order-btn { background: var(--dark); color: var(--yellow); }
 .bundle-card-dark .bundle-order-btn { background: var(--yellow); color: var(--dark); }
 .bundle-order-btn:hover { transform: translateX(6px); }
-
-/* Bundle image */
 .bundle-visual {
-  width: 160px; height: 160px; border-radius: 50%;
-  overflow: hidden; flex-shrink: 0;
-  border: 4px solid rgba(255,255,255,0.15);
-  position: relative;
+  width: 160px; height: 160px; border-radius: 50%; overflow: hidden; flex-shrink: 0;
+  border: 4px solid rgba(255,255,255,0.15); position: relative;
 }
-.bundle-visual img {
-  width: 100%; height: 100%; object-fit: cover;
-  /*
-    BUNDLE CARD IMAGES:
-    Social Pack:  src="./images/bundle-social.jpg"
-    Cheese Pack:  src="./images/bundle-cheese.jpg"
-  */
-}
+.bundle-visual img { width: 100%; height: 100%; object-fit: cover; }
 .bundle-multiplier {
   position: absolute; bottom: 8px; right: 8px;
   background: var(--dark); color: var(--yellow);
-  font-family: var(--font-bold); font-size: 0.75rem;
-  padding: 4px 8px; border-radius: 8px;
+  font-family: var(--font-bold); font-size: 0.75rem; padding: 4px 8px; border-radius: 8px;
 }
-
-/* Pizza bundle wide layout */
 .bundle-card-dark .bundle-inner {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
   gap: 40px; align-items: center; grid-column: 1/-1;
 }
 .bundle-pizza-img {
-  width: 100%; aspect-ratio: 1;
-  max-width: 220px; border-radius: 50%;
+  width: 100%; aspect-ratio: 1; max-width: 220px; border-radius: 50%;
   object-fit: cover; margin: 0 auto; display: block;
   border: 4px solid rgba(255,255,255,0.1);
-  /*
-    PIZZA BUNDLE IMAGE
-    src="./images/bundle-pizza.jpg"
-  */
 }
 
 /* ─── SPECIALS MARQUEE ─── */
-#specials {
-  background: var(--cream);
-  padding: 130px 0;
-  overflow: hidden;
-}
-.specials-header {
-  padding: 0 64px; margin-bottom: 54px;
-  display: flex; align-items: flex-end; justify-content: space-between;
-}
+#specials { background: var(--cream); padding: 130px 0; overflow: hidden; }
+.specials-header { padding: 0 64px; margin-bottom: 54px; display: flex; align-items: flex-end; justify-content: space-between; }
 .specials-marquee-wrap { overflow: hidden; }
 .specials-marquee {
   display: flex; gap: 28px;
-  animation: marqueeScroll 30s linear infinite;
-  width: max-content;
+  animation: marqueeScroll 30s linear infinite; width: max-content;
 }
 .specials-marquee:hover { animation-play-state: paused; }
-@keyframes marqueeScroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
+@keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .special-card {
-  background: var(--dark); border-radius: 20px;
-  width: 290px; flex-shrink: 0; overflow: hidden;
-  cursor: none; transition: all 0.35s;
+  background: var(--dark); border-radius: 20px; width: 290px; flex-shrink: 0;
+  overflow: hidden; cursor: pointer; transition: all 0.35s;
   border: 1px solid rgba(255,255,255,0.05);
 }
 .special-card:hover { transform: scale(1.04) translateY(-8px); border-color: rgba(255,184,0,0.3); }
-.special-card-img {
-  height: 190px; overflow: hidden; position: relative;
-}
-.special-card-img img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform 0.5s ease;
-  /*
-    SPECIAL CARD IMAGES (used in scrolling marquee):
-    1. src="./images/special-double-trouble.jpg"
-    2. src="./images/special-mushroom.jpg"
-    3. src="./images/special-hawaiian.jpg"
-    4. src="./images/special-veggie.jpg"
-    5. src="./images/special-bbq-pizza.jpg"
-    6. src="./images/special-pepperoni.jpg"
-    (duplicate the same images for the loop copies)
-  */
-}
+.special-card-img { height: 190px; overflow: hidden; position: relative; background: var(--dark2); }
+.special-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
 .special-card:hover .special-card-img img { transform: scale(1.08); }
 .sc-overlay-red { background: linear-gradient(135deg,#8B0000,var(--red)); }
 .sc-overlay-yellow { background: linear-gradient(135deg,#7A6000,var(--yellow)); }
 .sc-overlay-purple { background: linear-gradient(135deg,#3A0060,#9000FF); }
 .sc-overlay-green { background: linear-gradient(135deg,#004A22,#007A38); }
-/* Fallback color overlay if image fails */
-.special-card-img { background: var(--dark2); }
 .special-card-body { padding: 20px; }
 .special-card-tag { font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase; color: var(--yellow); margin-bottom: 6px; }
 .special-card-name { font-family: var(--font-bold); font-size: 0.95rem; color: var(--white); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
@@ -755,74 +558,37 @@ nav.scrolled {
 .special-card-price span { font-size: 0.75rem; color: rgba(255,255,255,0.3); }
 
 /* ─── REVIEWS ─── */
-#reviews {
-  background: var(--red);
-  padding: 130px 64px;
-  position: relative; overflow: hidden;
-}
+#reviews { background: var(--red); padding: 130px 64px; position: relative; overflow: hidden; }
 #reviews::before {
-  content: '"'; position: absolute;
-  font-family: var(--font-display); font-size: 45vw;
-  color: rgba(0,0,0,0.06); top: -15%; left: -5%;
-  line-height: 1; pointer-events: none;
+  content: '"'; position: absolute; font-family: var(--font-display); font-size: 45vw;
+  color: rgba(0,0,0,0.06); top: -15%; left: -5%; line-height: 1; pointer-events: none;
 }
-.reviews-top {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  margin-bottom: 60px;
-}
+.reviews-top { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 60px; }
 .reviews-rating { text-align: right; }
 .reviews-rating-num { font-family: var(--font-display); font-size: 5rem; color: var(--white); line-height: 1; }
 .reviews-rating-stars { color: var(--yellow); font-size: 1.3rem; letter-spacing: 4px; }
 .reviews-rating-count { font-size: 0.78rem; color: rgba(255,255,255,0.45); margin-top: 6px; letter-spacing: 1px; }
 .reviews-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .review-card {
-  background: rgba(0,0,0,0.18); border-radius: 22px;
-  padding: 32px; border: 1px solid rgba(255,255,255,0.08);
-  transition: all 0.4s; cursor: none; backdrop-filter: blur(8px);
+  background: rgba(0,0,0,0.18); border-radius: 22px; padding: 32px;
+  border: 1px solid rgba(255,255,255,0.08); transition: all 0.4s; cursor: default; backdrop-filter: blur(8px);
 }
 .review-card:hover { background: rgba(0,0,0,0.3); transform: translateY(-8px); border-color: rgba(255,184,0,0.3); }
 .review-stars { color: var(--yellow); font-size: 0.95rem; margin-bottom: 18px; letter-spacing: 2px; }
 .review-text { font-size: 0.93rem; line-height: 1.85; color: rgba(255,255,255,0.82); margin-bottom: 26px; font-style: italic; }
 .review-author { display: flex; align-items: center; gap: 14px; }
-.review-avatar {
-  width: 50px; height: 50px; border-radius: 50%; overflow: hidden;
-  border: 2px solid var(--yellow); background: var(--dark); flex-shrink: 0;
-}
-.review-avatar img {
-  width: 100%; height: 100%; object-fit: cover;
-  /*
-    REVIEWER AVATAR IMAGES:
-    James:  src="./images/reviewer-james.jpg"
-    Sarah:  src="./images/reviewer-sarah.jpg"
-    Marcus: src="./images/reviewer-marcus.jpg"
-    (square, 100x100px+, face centered)
-  */
-}
+.review-avatar { width: 50px; height: 50px; border-radius: 50%; overflow: hidden; border: 2px solid var(--yellow); background: var(--dark); flex-shrink: 0; }
+.review-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .review-name { font-family: var(--font-bold); font-size: 0.88rem; color: var(--white); letter-spacing: 2px; }
 .review-role { font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 3px; }
 
 /* ─── LOCATIONS ─── */
 #locations { background: var(--dark); padding: 130px 64px; }
 .locations-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 60px; }
-.location-card {
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 20px; overflow: hidden;
-  transition: all 0.35s; cursor: none; position: relative;
-}
+.location-card { border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; overflow: hidden; transition: all 0.35s; cursor: default; position: relative; }
 .location-card:hover { border-color: rgba(255,184,0,0.3); transform: translateY(-4px); }
-.location-card-img {
-  height: 200px; overflow: hidden; position: relative;
-}
-.location-card-img img {
-  width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s;
-  /*
-    LOCATION CARD IMAGES:
-    Downtown:  src="./images/location-downtown.jpg"
-    Westside:  src="./images/location-westside.jpg"
-    Northgate: src="./images/location-northgate.jpg"
-    (exterior or interior shots of each location)
-  */
-}
+.location-card-img { height: 200px; overflow: hidden; position: relative; }
+.location-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
 .location-card:hover .location-card-img img { transform: scale(1.06); }
 .location-card-img::after {
   content: ''; position: absolute; inset: 0;
@@ -834,115 +600,72 @@ nav.scrolled {
 .location-address { font-size: 0.83rem; color: rgba(255,255,255,0.38); line-height: 1.6; margin-bottom: 16px; }
 .location-hours { font-size: 0.78rem; color: var(--yellow); letter-spacing: 1px; }
 .location-status {
-  display: inline-block; background: rgba(34,197,94,0.15);
-  color: #22c55e; font-size: 0.68rem; letter-spacing: 2px;
-  padding: 4px 10px; border-radius: 20px;
-  margin-top: 10px; font-family: var(--font-bold);
+  display: inline-block; background: rgba(34,197,94,0.15); color: #22c55e;
+  font-size: 0.68rem; letter-spacing: 2px; padding: 4px 10px;
+  border-radius: 20px; margin-top: 10px; font-family: var(--font-bold);
 }
 
-/* ─── ORDER SECTION ─── */
-#order {
-  background: var(--dark2);
-  padding: 130px 64px;
-  position: relative; overflow: hidden;
-}
+/* ─── ORDER ─── */
+#order { background: var(--dark2); padding: 130px 64px; position: relative; overflow: hidden; }
 #order::before {
   content: ''; position: absolute; right: -200px; top: -200px;
   width: 600px; height: 600px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(217,28,28,0.12) 0%, transparent 70%);
-  pointer-events: none;
+  background: radial-gradient(circle, rgba(217,28,28,0.12) 0%, transparent 70%); pointer-events: none;
 }
 .order-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 90px; align-items: center; }
-.order-tagline {
-  font-size: 1.05rem; color: rgba(255,255,255,0.5);
-  line-height: 1.75; margin: 26px 0 44px; max-width: 440px;
-}
+.order-tagline { font-size: 1.05rem; color: rgba(255,255,255,0.5); line-height: 1.75; margin: 26px 0 44px; max-width: 440px; }
 .order-steps { margin-bottom: 44px; }
 .step { display: flex; align-items: flex-start; gap: 22px; margin-bottom: 30px; }
 .step-num { font-family: var(--font-display); font-size: 3.2rem; color: var(--red); line-height: 1; width: 50px; flex-shrink: 0; }
 .step-text h4 { font-family: var(--font-bold); font-size: 0.95rem; color: var(--white); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
 .step-text p { font-size: 0.82rem; color: rgba(255,255,255,0.38); line-height: 1.65; }
 .order-cta-btn {
-  background: var(--red); color: var(--white);
-  border: none; padding: 18px 50px;
-  font-family: var(--font-bold); font-size: 0.95rem;
-  letter-spacing: 3px; text-transform: uppercase;
-  border-radius: 50px; cursor: none;
+  background: var(--red); color: var(--white); border: none; padding: 18px 50px;
+  font-family: var(--font-bold); font-size: 0.95rem; letter-spacing: 3px;
+  text-transform: uppercase; border-radius: 50px; cursor: pointer;
   transition: all 0.35s; position: relative; overflow: hidden;
 }
 .order-cta-btn::after {
-  content: ''; position: absolute; inset: 0;
-  background: var(--yellow); transform: scaleX(0); transform-origin: left;
+  content: ''; position: absolute; inset: 0; background: var(--yellow);
+  transform: scaleX(0); transform-origin: left;
   transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); z-index: -1;
 }
 .order-cta-btn:hover::after { transform: scaleX(1); }
 .order-cta-btn:hover { color: var(--dark); transform: translateY(-3px); box-shadow: 0 20px 50px rgba(217,28,28,0.35); }
-
-/* Order form */
-.order-form {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 26px; padding: 44px;
-}
+.order-form { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 26px; padding: 44px; }
 .form-title { font-family: var(--font-display); font-size: 2.2rem; color: var(--white); margin-bottom: 6px; }
 .form-sub { font-size: 0.82rem; color: rgba(255,255,255,0.35); margin-bottom: 32px; }
 .form-group { margin-bottom: 20px; }
 .form-label { display: block; font-size: 0.72rem; letter-spacing: 2.5px; text-transform: uppercase; color: rgba(255,255,255,0.45); margin-bottom: 8px; }
 .form-input, .form-select {
-  width: 100%; padding: 14px 18px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 12px; color: var(--white);
-  font-family: var(--font-body); font-size: 0.93rem;
-  outline: none; transition: all 0.3s; cursor: none;
+  width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.09); border-radius: 12px; color: var(--white);
+  font-family: var(--font-body); font-size: 0.93rem; outline: none; transition: all 0.3s; cursor: text;
 }
+.form-select { cursor: pointer; }
 .form-select option { background: var(--dark2); }
-.form-input:focus, .form-select:focus {
-  border-color: var(--yellow);
-  box-shadow: 0 0 0 3px rgba(255,184,0,0.1);
-}
+.form-input:focus, .form-select:focus { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,184,0,0.1); }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .form-submit {
-  width: 100%; padding: 16px;
-  background: var(--yellow); color: var(--dark);
-  border: none; border-radius: 14px;
-  font-family: var(--font-bold); font-size: 0.92rem;
-  letter-spacing: 3px; text-transform: uppercase;
-  cursor: none; transition: all 0.3s; margin-top: 8px;
+  width: 100%; padding: 16px; background: var(--yellow); color: var(--dark);
+  border: none; border-radius: 14px; font-family: var(--font-bold); font-size: 0.92rem;
+  letter-spacing: 3px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-top: 8px;
 }
 .form-submit:hover { background: var(--white); transform: translateY(-2px); box-shadow: 0 12px 35px rgba(255,184,0,0.3); }
 
 /* ─── FOOTER ─── */
-footer {
-  background: var(--dark2);
-  padding: 90px 64px 44px;
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
-.footer-top {
-  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 64px; margin-bottom: 64px;
-}
+footer { background: var(--dark2); padding: 90px 64px 44px; border-top: 1px solid rgba(255,255,255,0.05); }
+.footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 64px; margin-bottom: 64px; }
 .footer-logo { font-family: var(--font-display); font-size: 2.4rem; color: var(--white); letter-spacing: 4px; margin-bottom: 16px; display: block; text-decoration: none; }
 .footer-logo span { color: var(--yellow); }
 .footer-tagline { font-size: 0.88rem; color: rgba(255,255,255,0.38); line-height: 1.75; max-width: 280px; }
 .footer-social { display: flex; gap: 10px; margin-top: 24px; }
 .social-icon {
-  width: 40px; height: 40px; border-radius: 10px;
-  background: rgba(255,255,255,0.05); display: flex;
-  align-items: center; justify-content: center;
-  text-decoration: none; transition: all 0.3s;
-  border: 1px solid rgba(255,255,255,0.08);
+  width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.05);
+  display: flex; align-items: center; justify-content: center;
+  text-decoration: none; transition: all 0.3s; border: 1px solid rgba(255,255,255,0.08);
 }
-.social-icon img {
-  width: 18px; height: 18px; object-fit: contain; filter: brightness(0) invert(1);
-  /*
-    SOCIAL ICONS:
-    Facebook: src="./images/icon-facebook.svg"
-    TikTok:   src="./images/icon-tiktok.svg"
-    Instagram:src="./images/icon-instagram.svg"
-    X:        src="./images/icon-x.svg"
-  */
-}
+.social-icon img { width: 18px; height: 18px; object-fit: contain; filter: brightness(0) invert(1); }
 .social-icon:hover { background: var(--yellow); border-color: var(--yellow); transform: translateY(-3px); }
 .social-icon:hover img { filter: brightness(0); }
 .footer-col h4 { font-family: var(--font-bold); font-size: 0.72rem; letter-spacing: 3px; color: var(--yellow); text-transform: uppercase; margin-bottom: 22px; }
@@ -950,11 +673,7 @@ footer {
 .footer-col ul li { margin-bottom: 12px; }
 .footer-col ul li a { font-size: 0.88rem; color: rgba(255,255,255,0.38); text-decoration: none; transition: color 0.3s; }
 .footer-col ul li a:hover { color: var(--white); }
-.footer-bottom {
-  border-top: 1px solid rgba(255,255,255,0.05);
-  padding-top: 32px;
-  display: flex; align-items: center; justify-content: space-between;
-}
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 32px; display: flex; align-items: center; justify-content: space-between; }
 .footer-copy { font-size: 0.78rem; color: rgba(255,255,255,0.22); }
 .footer-heart { color: var(--red); }
 
@@ -964,16 +683,10 @@ footer {
   background: var(--yellow); color: var(--dark);
   width: 62px; height: 62px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  cursor: none; z-index: 900;
-  box-shadow: 0 8px 32px rgba(255,184,0,0.5);
-  transition: all 0.3s; border: none;
+  cursor: pointer; z-index: 900;
+  box-shadow: 0 8px 32px rgba(255,184,0,0.5); transition: all 0.3s; border: none;
 }
-.floating-cart img {
-  width: 26px; height: 26px; object-fit: contain;
-  /*
-    CART ICON: src="./images/icon-cart.svg"
-  */
-}
+.floating-cart img { width: 26px; height: 26px; object-fit: contain; }
 .floating-cart:hover { transform: scale(1.1) rotate(-8deg); }
 .cart-count {
   position: absolute; top: -4px; right: -4px;
@@ -996,61 +709,41 @@ footer {
 .delay-4 { transition-delay: 0.4s; }
 .delay-5 { transition-delay: 0.5s; }
 
-/* ─── PARALLAX LINES (decorative) ─── */
-.deco-line {
-  position: absolute; background: rgba(255,255,255,0.04);
-  pointer-events: none;
-}
-.deco-line-h { height: 1px; width: 100%; }
-.deco-line-v { width: 1px; height: 100%; top: 0; }
-
 /* ─── VIDEO MODAL ─── */
 #videoModal {
   position: fixed; inset: 0; z-index: 99998;
   background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
   display: flex; align-items: center; justify-content: center;
-  opacity: 0; visibility: hidden;
-  transition: opacity 0.4s, visibility 0.4s;
+  opacity: 0; visibility: hidden; transition: opacity 0.4s, visibility 0.4s;
 }
 #videoModal.open { opacity: 1; visibility: visible; }
 .video-modal-inner {
-  width: 90vw; max-width: 900px;
-  aspect-ratio: 16/9;
-  background: var(--dark2);
-  border-radius: 20px; overflow: hidden;
-  position: relative;
+  width: 90vw; max-width: 900px; aspect-ratio: 16/9;
+  background: var(--dark2); border-radius: 20px; overflow: hidden; position: relative;
   transform: scale(0.9); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
   border: 1px solid rgba(255,255,255,0.1);
 }
 #videoModal.open .video-modal-inner { transform: scale(1); }
-.video-modal-inner video {
-  width: 100%; height: 100%; object-fit: cover;
-  /*
-    PROMO VIDEO:  src="./videos/billyboyz-promo.mp4"
-  */
-}
+.video-modal-inner video { width: 100%; height: 100%; object-fit: cover; }
 .video-close {
-  position: absolute; top: 16px; right: 16px;
-  width: 40px; height: 40px; border-radius: 50%;
+  position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 50%;
   background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2);
-  color: white; font-size: 1.2rem; cursor: none;
+  color: white; font-size: 1.2rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center; transition: all 0.2s;
 }
 .video-close:hover { background: var(--red); }
 
-/* ─── TOAST NOTIFICATION ─── */
+/* ─── TOAST ─── */
 .toast {
   position: fixed; bottom: 120px; right: 38px; z-index: 9000;
   background: var(--dark); border: 1px solid rgba(255,184,0,0.3);
   border-radius: 14px; padding: 16px 22px;
   display: flex; align-items: center; gap: 14px;
   transform: translateY(20px); opacity: 0;
-  transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-  pointer-events: none;
+  transition: all 0.4s cubic-bezier(0.16,1,0.3,1); pointer-events: none;
 }
 .toast.show { transform: translateY(0); opacity: 1; }
-.toast-icon { width: 36px; height: 36px; border-radius: 8px; object-fit: cover;
-  /* TOAST ICON: src="./images/toast-burger.jpg" */ }
+.toast-icon { width: 36px; height: 36px; border-radius: 8px; object-fit: cover; }
 .toast-text { font-family: var(--font-bold); font-size: 0.78rem; color: var(--white); letter-spacing: 1px; }
 .toast-sub { font-size: 0.68rem; color: var(--yellow); margin-top: 2px; }
 
@@ -1059,6 +752,119 @@ footer {
   position: fixed; top: 0; left: 0; right: 0; height: 2px;
   background: var(--yellow); z-index: 9999; transform-origin: left;
   transform: scaleX(0); transition: transform 0.1s;
+}
+
+/* ══════════════════════════════════════
+   MOBILE RESPONSIVE
+══════════════════════════════════════ */
+@media (max-width: 1024px) {
+  nav { padding: 18px 32px; }
+  nav.scrolled { padding: 12px 32px; }
+  .nav-links { display: none; }
+  .nav-cta { display: none; }
+  .nav-hamburger { display: flex; }
+
+  .hero-main { padding: 110px 32px 50px; }
+  .hero-layout { grid-template-columns: 1fr; gap: 40px; }
+  .hero-headline { font-size: clamp(4rem, 12vw, 8rem); }
+  .hero-visual { display: none; }
+  .hero-tagline { max-width: 100%; }
+
+  #about { padding: 80px 32px; }
+  .about-grid { grid-template-columns: 1fr; gap: 50px; }
+  .about-img-stack { height: 380px; }
+  .about-headline { font-size: clamp(3rem, 8vw, 5rem); }
+
+  #menu { padding: 80px 32px; }
+  .menu-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+
+  #bundles { padding: 80px 32px; }
+  .bundles-intro { grid-template-columns: 1fr; gap: 20px; }
+  .bundles-grid { grid-template-columns: 1fr; }
+  .bundle-card-dark { grid-column: 1; }
+  .bundle-card-dark .bundle-inner { grid-template-columns: 1fr; gap: 24px; }
+
+  #specials { padding: 80px 0; }
+  .specials-header { padding: 0 32px; }
+
+  #reviews { padding: 80px 32px; }
+  .reviews-grid { grid-template-columns: 1fr 1fr; gap: 18px; }
+  .reviews-top { flex-direction: column; align-items: flex-start; gap: 20px; }
+
+  #locations { padding: 80px 32px; }
+  .locations-grid { grid-template-columns: 1fr 1fr; gap: 18px; }
+
+  #order { padding: 80px 32px; }
+  .order-inner { grid-template-columns: 1fr; gap: 50px; }
+
+  footer { padding: 60px 32px 32px; }
+  .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+}
+
+@media (max-width: 640px) {
+  nav { padding: 16px 20px; }
+  nav.scrolled { padding: 12px 20px; }
+
+  .loader-logo { font-size: 3.5rem; }
+
+  .hero-main { padding: 100px 20px 40px; }
+  .hero-headline { font-size: clamp(3.2rem, 14vw, 5rem); }
+  .hero-tagline { font-size: 0.9rem; }
+  .btn-primary, .btn-ghost { padding: 14px 28px; font-size: 0.82rem; }
+  .hero-btns { flex-direction: column; gap: 12px; }
+  .hero-btns .btn-primary, .hero-btns .btn-ghost { width: 100%; text-align: center; }
+
+  #about { padding: 60px 20px; }
+  .about-img-stack { height: 300px; }
+  .about-img-main { width: 90%; height: 80%; }
+  .about-img-small { width: 50%; height: 40%; }
+  .about-badge { font-size: 0.78rem; padding: 10px 14px; left: 20%; }
+  .about-stats { flex-direction: row; gap: 24px; flex-wrap: wrap; }
+  .stat-num { font-size: 3rem; }
+
+  #menu { padding: 60px 20px; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .section-title { font-size: clamp(2.5rem, 10vw, 4rem); }
+  .menu-tabs { gap: 8px; }
+  .menu-tab { padding: 8px 16px; font-size: 0.72rem; }
+  .menu-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .menu-card-img { height: 150px; }
+  .menu-card-body { padding: 14px; }
+  .menu-card-name { font-size: 0.78rem; letter-spacing: 1px; }
+  .menu-card-desc { font-size: 0.7rem; margin-bottom: 12px; }
+  .menu-card-price { font-size: 1.3rem; }
+  .add-btn { width: 34px; height: 34px; font-size: 1.1rem; }
+
+  #bundles { padding: 60px 20px; }
+  .bundles-title { font-size: clamp(3rem, 12vw, 5rem); }
+  .bundle-card { padding: 26px; grid-template-columns: 1fr; }
+  .bundle-visual { width: 100px; height: 100px; margin-top: 16px; }
+  .bundle-name { font-size: 2.8rem; }
+  .bundle-items { grid-template-columns: 1fr; }
+
+  #specials { padding: 60px 0; }
+  .specials-header { padding: 0 20px; flex-direction: column; align-items: flex-start; gap: 14px; }
+  .special-card { width: 240px; }
+  .special-card-img { height: 150px; }
+
+  #reviews { padding: 60px 20px; }
+  .reviews-grid { grid-template-columns: 1fr; }
+  .reviews-rating-num { font-size: 3.5rem; }
+
+  #locations { padding: 60px 20px; }
+  .locations-grid { grid-template-columns: 1fr; }
+
+  #order { padding: 60px 20px; }
+  .order-form { padding: 28px 20px; }
+  .form-row { grid-template-columns: 1fr; }
+  .order-cta-btn { width: 100%; text-align: center; }
+
+  footer { padding: 50px 20px 28px; }
+  .footer-top { grid-template-columns: 1fr; gap: 32px; }
+  .footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
+
+  .floating-cart { bottom: 20px; right: 20px; width: 54px; height: 54px; }
+  .toast { right: 20px; left: 20px; bottom: 90px; }
 }
 </style>
 </head>
@@ -1074,7 +880,7 @@ footer {
 <!-- PROGRESS BAR -->
 <div id="progress-bar"></div>
 
-<!-- CURSOR -->
+<!-- CURSOR (desktop only) -->
 <div id="cursor"></div>
 <div id="cursor-trail"></div>
 
@@ -1082,10 +888,7 @@ footer {
 <div id="videoModal">
   <div class="video-modal-inner">
     <video id="promoVideo" controls playsinline>
-      <!--
-        PROMO VIDEO FILE
-        <source src="./videos/billyboyz-promo.mp4" type="video/mp4">
-      -->
+      <source src="./videos/billyboyz-promo.mp4" type="video/mp4">
     </video>
     <button class="video-close" onclick="closeVideo()">✕</button>
   </div>
@@ -1093,7 +896,7 @@ footer {
 
 <!-- TOAST -->
 <div class="toast" id="toast">
-  <img class="toast-icon" src="" alt="item">
+  <img class="toast-icon" src=".slid1.jpeg" alt="item">
   <div>
     <div class="toast-text">Added to cart!</div>
     <div class="toast-sub" id="toastSub">Double Trouble Burger</div>
@@ -1102,14 +905,14 @@ footer {
 
 <!-- FLOATING CART -->
 <button class="floating-cart" onclick="addToCart('Quick Add')">
-  <img src="" alt="cart">
+  <img src="./images/icon-cart.svg" alt="cart">
   <div class="cart-count" id="cartCount">0</div>
 </button>
 
 <!-- NAVBAR -->
 <nav id="navbar">
   <a href="#" class="nav-logo">
-    <img class="nav-logo-img" src="" alt="Billy Boyz Logo">
+    <img class="nav-logo-img" src=".slid2.jpeg" alt="Billy Boyz Logo">
     BILLY <span>BOYZ</span>
   </a>
   <ul class="nav-links">
@@ -1120,7 +923,20 @@ footer {
     <li><a href="#reviews">Reviews</a></li>
   </ul>
   <button class="nav-cta" onclick="scrollToOrder()">Order Now</button>
+  <button class="nav-hamburger" id="hamburger" onclick="toggleDrawer()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
+
+<!-- MOBILE DRAWER -->
+<div class="nav-drawer" id="navDrawer">
+  <a href="#menu" onclick="closeDrawer()">Menu</a>
+  <a href="#bundles" onclick="closeDrawer()">Bundles</a>
+  <a href="#order" onclick="closeDrawer()">Order</a>
+  <a href="#specials" onclick="closeDrawer()">Specials</a>
+  <a href="#reviews" onclick="closeDrawer()">Reviews</a>
+  <button class="nav-cta" onclick="closeDrawer(); scrollToOrder()">Order Now</button>
+</div>
 
 <!-- ══════════ HERO ══════════ -->
 <section id="hero">
@@ -1136,7 +952,6 @@ footer {
     </h1>
 
     <div class="hero-layout">
-      <!-- Left -->
       <div class="hero-meta">
         <p class="hero-tagline">Born on the grill. Raised on obsessive flavor. Every bite is hand-crafted to change your whole day.</p>
         <div class="hero-btns">
@@ -1145,22 +960,13 @@ footer {
         </div>
       </div>
 
-      <!-- Right -->
       <div class="hero-visual">
         <img class="hero-product-img"
-          src=""
-          alt="Billy Boyz signature burger"
-          <!--
-            HERO PRODUCT IMAGE
-            src="./images/hero-burger.jpg"
-          -->
-        >
+          src=".slid3.jpeg"
+          alt="Billy Boyz signature burger">
 
-        <!-- Floating chips -->
         <div class="hero-chip hero-chip-1">
-          <img class="chip-img" src="" alt="fries"
-          <!--  src="./images/chip-fries.jpg" -->
-          >
+          <img class="chip-img" src="./images/chip-fries.jpeg" alt="fries">
           <div>
             <div class="chip-label">GOLDEN FRIES</div>
             <div class="chip-sub">From $3.99</div>
@@ -1168,16 +974,13 @@ footer {
         </div>
 
         <div class="hero-chip hero-chip-2">
-          <img class="chip-img" src="" alt="shake"
-          <!--  src="./images/chip-shake.jpg" -->
-          >
+          <img class="chip-img" src="./images/chip-shake.jpeg" alt="shake">
           <div>
             <div class="chip-label">FROSTED SHAKE</div>
             <div class="chip-sub">From $4.49</div>
           </div>
         </div>
 
-        <!-- Spinning badge -->
         <div class="spinning-badge">
           <svg viewBox="0 0 120 120" width="120" height="120">
             <defs>
@@ -1189,9 +992,7 @@ footer {
           </svg>
           <div class="badge-center">
             <button class="badge-inner" onclick="openVideo()">
-              <img class="badge-icon" src="" alt="play"
-              <!-- src="./images/icon-play.svg" -->
-              >
+              <img class="badge-icon" src="./images/icon-play.svg" alt="play">
             </button>
           </div>
         </div>
@@ -1199,24 +1000,23 @@ footer {
     </div>
   </div>
 
-  <!-- Ticker -->
   <div class="hero-ticker">
     <div class="ticker-inner">
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> DOUBLE TROUBLE BURGER <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> CHEESE STACK PIZZA <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> CRUNCH PACK $37.9 <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> HAWAIIAN BURGER <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> FREE DELIVERY TODAY <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> SOCIAL PACK DEAL <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> 20% OFF ALL ITEMS <span class="ticker-sep">●</span></div>
-      <!-- duplicates -->
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> DOUBLE TROUBLE BURGER <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> CHEESE STACK PIZZA <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> CRUNCH PACK $37.9 <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> HAWAIIAN BURGER <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> FREE DELIVERY TODAY <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> SOCIAL PACK DEAL <span class="ticker-sep">●</span></div>
-      <div class="ticker-item"><img class="ticker-img" src="" alt=""> 20% OFF ALL ITEMS <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-double-trouble.jpeg" alt=""> DOUBLE TROUBLE BURGER <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-pizza.jpeg" alt=""> CHEESE STACK PIZZA <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-crunch.jpeg" alt=""> CRUNCH PACK $37.9 <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-hawaiian.jpeg" alt=""> HAWAIIAN BURGER <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-delivery.jpeg" alt=""> FREE DELIVERY TODAY <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-social.jpeg" alt=""> SOCIAL PACK DEAL <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-sale.jpeg" alt=""> 20% OFF ALL ITEMS <span class="ticker-sep">●</span></div>
+      <!-- duplicates for seamless loop -->
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-double-trouble.jpeg" alt=""> DOUBLE TROUBLE BURGER <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-pizza.jpeg" alt=""> CHEESE STACK PIZZA <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-crunch.jpeg" alt=""> CRUNCH PACK $37.9 <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-hawaiian.jpeg" alt=""> HAWAIIAN BURGER <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-delivery.jpeg" alt=""> FREE DELIVERY TODAY <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-social.jpeg" alt=""> SOCIAL PACK DEAL <span class="ticker-sep">●</span></div>
+      <div class="ticker-item"><img class="ticker-img" src="./images/ticker-sale.jpeg" alt=""> 20% OFF ALL ITEMS <span class="ticker-sep">●</span></div>
     </div>
   </div>
 </section>
@@ -1229,37 +1029,18 @@ footer {
       <h2 class="about-headline">BORN ON THE<br><em>GRILL.</em><br>RAISED ON<br><em>FLAVOR.</em></h2>
       <p class="about-text">Billy Boyz started with one iron skillet, one insane recipe, and a dream that a great burger could change your whole day. From burgers to our legendary pizzas — every bite is crafted with obsessive attention to quality, fire, and flavor.</p>
       <div class="about-stats">
-        <div class="stat">
-          <div class="stat-num" data-target="12">0</div>
-          <div class="stat-label">Locations</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" data-target="50">0</div>
-          <div class="stat-label">Menu Items</div>
-        </div>
-        <div class="stat">
-          <div class="stat-num" data-target="98">0</div>
-          <div class="stat-label">% Happy Customers</div>
-        </div>
+        <div class="stat"><div class="stat-num" data-target="12">0</div><div class="stat-label">Locations</div></div>
+        <div class="stat"><div class="stat-num" data-target="50">0</div><div class="stat-label">Menu Items</div></div>
+        <div class="stat"><div class="stat-num" data-target="98">0</div><div class="stat-label">% Happy Customers</div></div>
       </div>
     </div>
 
     <div class="about-img-stack reveal-right">
       <div class="about-img-main">
-        <img src="" alt="Billy Boyz kitchen"
-        <!--
-          ABOUT MAIN IMAGE
-          src="./images/about-kitchen.jpg"
-        -->
-        >
+        <img src="./images/about-kitchen.jpeg" alt="Billy Boyz kitchen">
       </div>
       <div class="about-img-small">
-        <img src="" alt="Close-up burger"
-        <!--
-          ABOUT SMALL IMAGE
-          src="./images/about-closeup.jpg"
-        -->
-        >
+        <img src="./images/about-closeup.jpeg" alt="Close-up burger">
       </div>
       <div class="about-badge">Est. 2018 — Since Day One</div>
     </div>
@@ -1315,9 +1096,7 @@ footer {
       </div>
       <div>
         <div class="bundle-visual">
-          <img src="" alt="Social Pack"
-          <!-- src="./images/bundle-social.jpg" -->
-          >
+          <img src="./images/bundle-social.jpeg" alt="Social Pack">
           <div class="bundle-multiplier">2x</div>
         </div>
       </div>
@@ -1343,15 +1122,12 @@ footer {
       </div>
       <div>
         <div class="bundle-visual">
-          <img src="" alt="Cheese Pack"
-          <!-- src="./images/bundle-cheese.jpg" -->
-          >
+          <img src="./images/bundle-cheese.jpeg" alt="Cheese Pack">
           <div class="bundle-multiplier">2x</div>
         </div>
       </div>
     </div>
 
-    <!-- Pizza bundle — full width -->
     <div class="bundle-card bundle-card-dark reveal delay-3">
       <div class="bundle-inner">
         <div>
@@ -1367,9 +1143,7 @@ footer {
           <li><div class="bundle-check">✓</div> 2x Soft Drinks</li>
         </ul>
         <div style="display:flex;align-items:center;flex-direction:column;gap:20px">
-          <img class="bundle-pizza-img" src="" alt="Pizza Pack"
-          <!-- src="./images/bundle-pizza.jpg" -->
-          >
+          <img class="bundle-pizza-img" src="./images/bundle-pizza.jpeg" alt="Pizza Pack">
           <button class="bundle-order-btn" onclick="addToCart('Pizza Pack Bundle')">Order Now →</button>
         </div>
       </div>
@@ -1390,76 +1164,52 @@ footer {
   <div class="specials-marquee-wrap">
     <div class="specials-marquee">
       <div class="special-card">
-        <div class="special-card-img sc-overlay-red"><img src="" alt="Double Trouble Burger"<!-- src="./images/special-double-trouble.jpg" -->></div>
-        <div class="special-card-body">
-          <div class="special-card-tag">Burger</div>
-          <div class="special-card-name">DOUBLE TROUBLE</div>
-          <div class="special-card-price">$7.99 <span>/item</span></div>
-        </div>
+        <div class="special-card-img sc-overlay-red"><img src="./images/special-double-trouble.jpeg" alt="Double Trouble Burger"></div>
+        <div class="special-card-body"><div class="special-card-tag">Burger</div><div class="special-card-name">DOUBLE TROUBLE</div><div class="special-card-price">$7.99 <span>/item</span></div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img sc-overlay-yellow"><img src="" alt="Mushroom Burger"<!-- src="./images/special-mushroom.jpg" -->></div>
-        <div class="special-card-body">
-          <div class="special-card-tag">Burger</div>
-          <div class="special-card-name">MUSHROOM BURGER</div>
-          <div class="special-card-price">$10.99 <span>/item</span></div>
-        </div>
+        <div class="special-card-img sc-overlay-yellow"><img src="./images/special-mushroom.jpeg" alt="Mushroom Burger"></div>
+        <div class="special-card-body"><div class="special-card-tag">Burger</div><div class="special-card-name">MUSHROOM BURGER</div><div class="special-card-price">$10.99 <span>/item</span></div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img sc-overlay-green"><img src="" alt="Hawaiian Burger"<!-- src="./images/special-hawaiian.jpg" -->></div>
-        <div class="special-card-body">
-          <div class="special-card-tag">Burger</div>
-          <div class="special-card-name">HAWAIIAN BURGER</div>
-          <div class="special-card-price">$12.29 <span>/item</span></div>
-        </div>
+        <div class="special-card-img sc-overlay-green"><img src="./images/special-hawaiian.jpeg" alt="Hawaiian Burger"></div>
+        <div class="special-card-body"><div class="special-card-tag">Burger</div><div class="special-card-name">HAWAIIAN BURGER</div><div class="special-card-price">$12.29 <span>/item</span></div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img" style="background:linear-gradient(135deg,#004A22,#007A38)"><img src="" alt="Veggie Delight"<!-- src="./images/special-veggie.jpg" -->></div>
-        <div class="special-card-body">
-          <div class="special-card-tag">Veggie</div>
-          <div class="special-card-name">VEGGIE DELIGHT</div>
-          <div class="special-card-price">$5.49 <span>/item</span></div>
-        </div>
+        <div class="special-card-img" style="background:linear-gradient(135deg,#004A22,#007A38)"><img src="./images/special-veggie.jpeg" alt="Veggie Delight"></div>
+        <div class="special-card-body"><div class="special-card-tag">Veggie</div><div class="special-card-name">VEGGIE DELIGHT</div><div class="special-card-price">$5.49 <span>/item</span></div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img sc-overlay-purple"><img src="" alt="BBQ Pizza"<!-- src="./images/special-bbq-pizza.jpg" -->></div>
-        <div class="special-card-body">
-          <div class="special-card-tag">Pizza</div>
-          <div class="special-card-name">BBQ BLAST PIZZA</div>
-          <div class="special-card-price">$14.99 <span>/item</span></div>
-        </div>
+        <div class="special-card-img sc-overlay-purple"><img src="./images/special-bbq-pizza.jpeg" alt="BBQ Pizza"></div>
+        <div class="special-card-body"><div class="special-card-tag">Pizza</div><div class="special-card-name">BBQ BLAST PIZZA</div><div class="special-card-price">$14.99 <span>/item</span></div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img sc-overlay-red"><img src="" alt="Pepperoni Pizza"<!-- src="./images/special-pepperoni.jpg" -->></div>
-        <div class="special-card-body">
-          <div class="special-card-tag">Pizza</div>
-          <div class="special-card-name">PEPPERONI BEAST</div>
-          <div class="special-card-price">$13.49 <span>/item</span></div>
-        </div>
+        <div class="special-card-img sc-overlay-red"><img src="./images/special-pepperoni.jpeg" alt="Pepperoni Pizza"></div>
+        <div class="special-card-body"><div class="special-card-tag">Pizza</div><div class="special-card-name">PEPPERONI BEAST</div><div class="special-card-price">$13.49 <span>/item</span></div></div>
       </div>
       <!-- Loop duplicates -->
       <div class="special-card">
-        <div class="special-card-img sc-overlay-red"><img src="" alt="Double Trouble Burger"<!-- src="./images/special-double-trouble.jpg" -->></div>
+        <div class="special-card-img sc-overlay-red"><img src="./images/special-double-trouble.jpeg" alt="Double Trouble Burger"></div>
         <div class="special-card-body"><div class="special-card-tag">Burger</div><div class="special-card-name">DOUBLE TROUBLE</div><div class="special-card-price">$7.99</div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img sc-overlay-yellow"><img src="" alt="Mushroom Burger"<!-- src="./images/special-mushroom.jpg" -->></div>
+        <div class="special-card-img sc-overlay-yellow"><img src="./images/special-mushroom.jpeg" alt="Mushroom Burger"></div>
         <div class="special-card-body"><div class="special-card-tag">Burger</div><div class="special-card-name">MUSHROOM BURGER</div><div class="special-card-price">$10.99</div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img sc-overlay-green"><img src="" alt="Hawaiian Burger"<!-- src="./images/special-hawaiian.jpg" -->></div>
+        <div class="special-card-img sc-overlay-green"><img src="./images/special-hawaiian.jpeg" alt="Hawaiian Burger"></div>
         <div class="special-card-body"><div class="special-card-tag">Burger</div><div class="special-card-name">HAWAIIAN BURGER</div><div class="special-card-price">$12.29</div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img" style="background:linear-gradient(135deg,#004A22,#007A38)"><img src="" alt="Veggie Delight"<!-- src="./images/special-veggie.jpg" -->></div>
+        <div class="special-card-img" style="background:linear-gradient(135deg,#004A22,#007A38)"><img src="./images/special-veggie.jpeg" alt="Veggie Delight"></div>
         <div class="special-card-body"><div class="special-card-tag">Veggie</div><div class="special-card-name">VEGGIE DELIGHT</div><div class="special-card-price">$5.49</div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img sc-overlay-purple"><img src="" alt="BBQ Pizza"<!-- src="./images/special-bbq-pizza.jpg" -->></div>
+        <div class="special-card-img sc-overlay-purple"><img src="./images/special-bbq-pizza.jpeg" alt="BBQ Pizza"></div>
         <div class="special-card-body"><div class="special-card-tag">Pizza</div><div class="special-card-name">BBQ BLAST PIZZA</div><div class="special-card-price">$14.99</div></div>
       </div>
       <div class="special-card">
-        <div class="special-card-img sc-overlay-red"><img src="" alt="Pepperoni Pizza"<!-- src="./images/special-pepperoni.jpg" -->></div>
+        <div class="special-card-img sc-overlay-red"><img src="./images/special-pepperoni.jpeg" alt="Pepperoni Pizza"></div>
         <div class="special-card-body"><div class="special-card-tag">Pizza</div><div class="special-card-name">PEPPERONI BEAST</div><div class="special-card-price">$13.49</div></div>
       </div>
     </div>
@@ -1485,7 +1235,7 @@ footer {
       <div class="review-stars">★★★★★</div>
       <p class="review-text">"Billy Boyz changed my life. The Double Trouble Burger is the single greatest thing humanity has ever produced. I drive 40 minutes just to eat here."</p>
       <div class="review-author">
-        <div class="review-avatar"><img src="" alt="James K"<!-- src="./images/reviewer-james.jpg" -->></div>
+        <div class="review-avatar"><img src="./images/reviewer-james.jpeg" alt="James K"></div>
         <div><div class="review-name">JAMES K.</div><div class="review-role">Regular Customer · Miami, FL</div></div>
       </div>
     </div>
@@ -1493,7 +1243,7 @@ footer {
       <div class="review-stars">★★★★★</div>
       <p class="review-text">"Ordered the Cheese Pack for date night and my partner thought I cooked it myself. That's how good this is. The fries deserve a Michelin star."</p>
       <div class="review-author">
-        <div class="review-avatar"><img src="" alt="Sarah M"<!-- src="./images/reviewer-sarah.jpg" -->></div>
+        <div class="review-avatar"><img src="./images/reviewer-sarah.jpeg" alt="Sarah M"></div>
         <div><div class="review-name">SARAH M.</div><div class="review-role">Food Blogger · NYC</div></div>
       </div>
     </div>
@@ -1501,7 +1251,7 @@ footer {
       <div class="review-stars">★★★★★</div>
       <p class="review-text">"Came for a burger, stayed for the pizza. The BBQ Blast is criminally underrated. Billy Boyz just gets it — quality, speed, and that fire atmosphere."</p>
       <div class="review-author">
-        <div class="review-avatar"><img src="" alt="Marcus T"<!-- src="./images/reviewer-marcus.jpg" -->></div>
+        <div class="review-avatar"><img src="./images/reviewer-marcus.jpeg" alt="Marcus T"></div>
         <div><div class="review-name">MARCUS T.</div><div class="review-role">Chef · Los Angeles</div></div>
       </div>
     </div>
@@ -1518,9 +1268,7 @@ footer {
   </div>
   <div class="locations-grid">
     <div class="location-card reveal delay-1">
-      <div class="location-card-img">
-        <img src="" alt="Downtown location"<!-- src="./images/location-downtown.jpg" -->>
-      </div>
+      <div class="location-card-img"><img src="./images/location-downtown.jpeg" alt="Downtown location"></div>
       <div class="location-card-body">
         <div class="location-num">01</div>
         <div class="location-city">Downtown</div>
@@ -1530,9 +1278,7 @@ footer {
       </div>
     </div>
     <div class="location-card reveal delay-2">
-      <div class="location-card-img">
-        <img src="" alt="Westside location"<!-- src="./images/location-westside.jpg" -->>
-      </div>
+      <div class="location-card-img"><img src="./images/location-westside.jpeg" alt="Westside location"></div>
       <div class="location-card-body">
         <div class="location-num">02</div>
         <div class="location-city">Westside</div>
@@ -1542,9 +1288,7 @@ footer {
       </div>
     </div>
     <div class="location-card reveal delay-3">
-      <div class="location-card-img">
-        <img src="" alt="Northgate location"<!-- src="./images/location-northgate.jpg" -->>
-      </div>
+      <div class="location-card-img"><img src="./images/location-northgate.jpeg" alt="Northgate location"></div>
       <div class="location-card-body">
         <div class="location-num">03</div>
         <div class="location-city">Northgate</div>
@@ -1566,24 +1310,15 @@ footer {
       <div class="order-steps">
         <div class="step">
           <div class="step-num">01</div>
-          <div class="step-text">
-            <h4>Pick Your Items</h4>
-            <p>Browse the full menu — burgers, pizza, sides & drinks. Everything's fresh, everything's good.</p>
-          </div>
+          <div class="step-text"><h4>Pick Your Items</h4><p>Browse the full menu — burgers, pizza, sides & drinks. Everything's fresh, everything's good.</p></div>
         </div>
         <div class="step">
           <div class="step-num">02</div>
-          <div class="step-text">
-            <h4>Customize It</h4>
-            <p>Extra cheese? No onions? Spicy sauce? Make it yours. We don't judge.</p>
-          </div>
+          <div class="step-text"><h4>Customize It</h4><p>Extra cheese? No onions? Spicy sauce? Make it yours. We don't judge.</p></div>
         </div>
         <div class="step">
           <div class="step-num">03</div>
-          <div class="step-text">
-            <h4>Fast Delivery</h4>
-            <p>Arrives hot, on time, every time. Track your order live from kitchen to door.</p>
-          </div>
+          <div class="step-text"><h4>Fast Delivery</h4><p>Arrives hot, on time, every time. Track your order live from kitchen to door.</p></div>
         </div>
       </div>
       <button class="order-cta-btn" onclick="document.querySelector('.form-input').focus()">Start Your Order →</button>
@@ -1639,10 +1374,10 @@ footer {
       <a href="#" class="footer-logo">BILLY <span>BOYZ</span></a>
       <p class="footer-tagline">Bigger. Juicier. Better. Feeding the city's hunger since 2018 — one legendary burger at a time.</p>
       <div class="footer-social">
-        <a href="#" class="social-icon"><img src="" alt="Facebook"<!-- src="./images/icon-facebook.svg" -->></a>
-        <a href="#" class="social-icon"><img src="" alt="TikTok"<!-- src="./images/icon-tiktok.svg" -->></a>
-        <a href="#" class="social-icon"><img src="" alt="Instagram"<!-- src="./images/icon-instagram.svg" -->></a>
-        <a href="#" class="social-icon"><img src="" alt="X"<!-- src="./images/icon-x.svg" -->></a>
+        <a href="#" class="social-icon"><img src="./images/icon-facebook.svg" alt="Facebook"></a>
+        <a href="#" class="social-icon"><img src="./images/icon-tiktok.svg" alt="TikTok"></a>
+        <a href="#" class="social-icon"><img src="./images/icon-instagram.svg" alt="Instagram"></a>
+        <a href="#" class="social-icon"><img src="./images/icon-x.svg" alt="X"></a>
       </div>
     </div>
     <div class="footer-col">
@@ -1709,6 +1444,16 @@ document.querySelectorAll('a,button,.menu-card,.bundle-card,.special-card,.revie
   });
 });
 
+// ─── MOBILE NAV ───
+function toggleDrawer(){
+  document.getElementById('navDrawer').classList.toggle('open');
+  document.getElementById('hamburger').classList.toggle('open');
+}
+function closeDrawer(){
+  document.getElementById('navDrawer').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
 // ─── SCROLL PROGRESS ───
 const progressBar = document.getElementById('progress-bar');
 window.addEventListener('scroll',()=>{
@@ -1741,10 +1486,7 @@ window.addEventListener('load',()=>{
 // ─── SCROLL REVEAL ───
 const revealObs = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{
-    if(e.isIntersecting){
-      e.target.classList.add('visible');
-      revealObs.unobserve(e.target);
-    }
+    if(e.isIntersecting){ e.target.classList.add('visible'); revealObs.unobserve(e.target); }
   });
 },{threshold:0.1});
 document.querySelectorAll('.reveal,.reveal-left,.reveal-right').forEach(el=>revealObs.observe(el));
@@ -1768,22 +1510,14 @@ document.querySelectorAll('[data-target]').forEach(el=>cntObs.observe(el));
 
 // ─── MENU DATA ───
 const menuItems = [
-  { name:'DOUBLE TROUBLE', desc:'Double smash patty, cheddar stack, house sauce', price:'$7.99', category:'burger', discount:'20% OFF',
-    imgComment:'src="./images/menu-double-trouble.jpg"' },
-  { name:'MUSHROOM BURGER', desc:'Crispy mushroom, truffle aioli, brioche bun', price:'$10.99', category:'burger', discount:'20% OFF',
-    imgComment:'src="./images/menu-mushroom.jpg"' },
-  { name:'HAWAIIAN BURGER', desc:'Pineapple glaze, teriyaki, sesame bun', price:'$12.29', category:'burger', discount:'20% OFF',
-    imgComment:'src="./images/menu-hawaiian.jpg"' },
-  { name:'VEGGIE DELIGHT', desc:'Beyond patty, avocado, house greens', price:'$5.49', category:'burger', discount:'20% OFF',
-    imgComment:'src="./images/menu-veggie.jpg"' },
-  { name:'BBQ BLAST PIZZA', desc:'Smoky BBQ base, pulled pork, jalapeño', price:'$14.99', category:'pizza', discount:'15% OFF',
-    imgComment:'src="./images/menu-bbq-pizza.jpg"' },
-  { name:'PEPPERONI BEAST', desc:'Triple pepperoni, mozzarella pull, chilli oil', price:'$13.49', category:'pizza', discount:'15% OFF',
-    imgComment:'src="./images/menu-pepperoni.jpg"' },
-  { name:'GOLDEN FRIES', desc:'Sea salt, rosemary, truffle option', price:'$3.99', category:'sides', discount:'10% OFF',
-    imgComment:'src="./images/menu-fries.jpg"' },
-  { name:'FROSTED SHAKE', desc:'Vanilla, chocolate or strawberry', price:'$4.49', category:'drinks', discount:'10% OFF',
-    imgComment:'src="./images/menu-shake.jpg"' },
+  { name:'DOUBLE TROUBLE', desc:'Double smash patty, cheddar stack, house sauce', price:'$7.99', category:'burger', discount:'20% OFF', img:'./images/menu-double-trouble.jpeg' },
+  { name:'MUSHROOM BURGER', desc:'Crispy mushroom, truffle aioli, brioche bun', price:'$10.99', category:'burger', discount:'20% OFF', img:'./images/menu-mushroom.jpeg' },
+  { name:'HAWAIIAN BURGER', desc:'Pineapple glaze, teriyaki, sesame bun', price:'$12.29', category:'burger', discount:'20% OFF', img:'./images/menu-hawaiian.jpeg' },
+  { name:'VEGGIE DELIGHT', desc:'Beyond patty, avocado, house greens', price:'$5.49', category:'burger', discount:'20% OFF', img:'./images/menu-veggie.jpeg' },
+  { name:'BBQ BLAST PIZZA', desc:'Smoky BBQ base, pulled pork, jalapeño', price:'$14.99', category:'pizza', discount:'15% OFF', img:'./images/menu-bbq-pizza.jpeg' },
+  { name:'PEPPERONI BEAST', desc:'Triple pepperoni, mozzarella pull, chilli oil', price:'$13.49', category:'pizza', discount:'15% OFF', img:'./images/menu-pepperoni.jpeg' },
+  { name:'GOLDEN FRIES', desc:'Sea salt, rosemary, truffle option', price:'$3.99', category:'sides', discount:'10% OFF', img:'./images/menu-fries.jpeg' },
+  { name:'FROSTED SHAKE', desc:'Vanilla, chocolate or strawberry', price:'$4.49', category:'drinks', discount:'10% OFF', img:'./images/menu-shake.jpeg' },
 ];
 
 function renderMenu(filter='all'){
@@ -1792,10 +1526,7 @@ function renderMenu(filter='all'){
   grid.innerHTML = items.map((item,i)=>`
     <div class="menu-card reveal delay-${(i%4)+1}" data-category="${item.category}">
       <div class="menu-card-img">
-        <img src=""
-          alt="${item.name}"
-          <!-- IMAGE: ${item.imgComment} -->
-        >
+        <img src="${item.img}" alt="${item.name}">
         <div class="discount-badge">${item.discount}</div>
       </div>
       <div class="menu-card-body">
@@ -1808,18 +1539,7 @@ function renderMenu(filter='all'){
       </div>
     </div>
   `).join('');
-  grid.querySelectorAll('.reveal').forEach(el=>{
-    el.classList.remove('visible');
-    revealObs.observe(el);
-  });
-  grid.querySelectorAll('.menu-card').forEach(card=>{
-    card.addEventListener('mouseenter',()=>{
-      cursor.style.width='28px'; cursor.style.height='28px';
-    });
-    card.addEventListener('mouseleave',()=>{
-      cursor.style.width='16px'; cursor.style.height='16px';
-    });
-  });
+  grid.querySelectorAll('.reveal').forEach(el=>{ el.classList.remove('visible'); revealObs.observe(el); });
 }
 renderMenu();
 
@@ -1844,7 +1564,6 @@ function addToCart(name='Item'){
   const cart=document.querySelector('.floating-cart');
   cart.style.transform='scale(1.35) rotate(-14deg)';
   setTimeout(()=>cart.style.transform='',300);
-  // Toast
   const toast=document.getElementById('toast');
   document.getElementById('toastSub').textContent=name;
   toast.classList.add('show');
@@ -1853,7 +1572,7 @@ function addToCart(name='Item'){
 
 // ─── ORDER FORM ───
 function submitOrder(btn){
-  btn.textContent='Order Placed! We\'ll call you soon.';
+  btn.textContent="Order Placed! We'll call you soon.";
   btn.style.background='#22c55e'; btn.style.color='#fff';
   setTimeout(()=>{ btn.textContent='Place Order Now'; btn.style.background=''; btn.style.color=''; },4000);
 }
@@ -1886,22 +1605,24 @@ window.addEventListener('scroll',()=>{
   }
 });
 
-// ─── 3D CARD TILT ───
-document.addEventListener('mousemove',e=>{
-  document.querySelectorAll('.menu-card').forEach(card=>{
-    const rect=card.getBoundingClientRect();
-    const cx=rect.left+rect.width/2;
-    const cy=rect.top+rect.height/2;
-    const dx=(e.clientX-cx)/rect.width;
-    const dy=(e.clientY-cy)/rect.height;
-    const dist=Math.sqrt(dx*dx+dy*dy);
-    if(dist<0.85){
-      card.style.transform=`perspective(900px) rotateY(${dx*10}deg) rotateX(${-dy*10}deg) translateY(-12px) scale(1.02)`;
-    } else {
-      card.style.transform='';
-    }
+// ─── 3D CARD TILT (desktop only) ───
+if(window.matchMedia('(pointer: fine)').matches){
+  document.addEventListener('mousemove',e=>{
+    document.querySelectorAll('.menu-card').forEach(card=>{
+      const rect=card.getBoundingClientRect();
+      const cx=rect.left+rect.width/2;
+      const cy=rect.top+rect.height/2;
+      const dx=(e.clientX-cx)/rect.width;
+      const dy=(e.clientY-cy)/rect.height;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<0.85){
+        card.style.transform=`perspective(900px) rotateY(${dx*10}deg) rotateX(${-dy*10}deg) translateY(-12px) scale(1.02)`;
+      } else {
+        card.style.transform='';
+      }
+    });
   });
-});
+}
 </script>
 </body>
 </html>
