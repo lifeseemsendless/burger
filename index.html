@@ -278,19 +278,17 @@ nav.scrolled {
   animation: fadeUp 1s 0.3s both;
 }
 
-/* The video itself — transparent BG, no UI, blends with hero */
+/* The video itself — blends into the dark hero bg via screen mode */
 .hero-burger-video {
   width: 100%;
   max-width: 460px;
-  /* No border-radius so it looks like it's floating in space */
   border-radius: 0;
-  /* transparent background shows through */
   background: transparent;
-  /* drop shadow gives depth without any UI chrome */
-  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.55)) drop-shadow(0 0 40px rgba(217,28,28,0.12));
+  /* screen blend: blacks become invisible, burger layers float naturally */
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 20px 50px rgba(217,28,28,0.15));
   animation: heroVideoFloat 5s ease-in-out infinite;
   display: block;
-  /* No pointer events so no context menu on right-click accidentally */
   pointer-events: none;
 }
 @keyframes heroVideoFloat {
