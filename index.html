@@ -278,17 +278,18 @@ nav.scrolled {
   animation: fadeUp 1s 0.3s both;
 }
 
-/* The video itself — blends into the dark hero bg via screen mode */
+/* Hidden source video — never shown, just feeds the canvas */
 .hero-burger-video {
+  display: none;
+}
+
+/* Canvas is what the user sees — transparent background, burger only */
+#heroBurgerCanvas {
   width: 100%;
   max-width: 460px;
-  border-radius: 0;
-  background: transparent;
-  /* screen blend: blacks become invisible, burger layers float naturally */
-  mix-blend-mode: screen;
-  filter: drop-shadow(0 20px 50px rgba(217,28,28,0.15));
-  animation: heroVideoFloat 5s ease-in-out infinite;
   display: block;
+  filter: drop-shadow(0 24px 48px rgba(0,0,0,0.5)) drop-shadow(0 0 30px rgba(217,28,28,0.18));
+  animation: heroVideoFloat 5s ease-in-out infinite;
   pointer-events: none;
 }
 @keyframes heroVideoFloat {
@@ -1005,17 +1006,20 @@ footer { background: var(--dark2); padding: 90px 64px 44px; border-top: 1px soli
         </div>
       </div>
 
-      <!-- CENTER: Explode-view burger video — no controls, blends into hero bg -->
+      <!-- CENTER: Explode-view burger video — drawn onto canvas for true bg removal -->
       <div class="hero-video-col">
+        <!-- Hidden video feeds frames into the canvas below -->
         <video
           class="hero-burger-video"
           id="heroExplodeVideo"
           src="burgerexp.mp4"
-          autoplay
           muted
           playsinline
           preload="auto"
+          crossorigin="anonymous"
         ></video>
+        <!-- Canvas renders each frame with the dark background keyed out -->
+        <canvas id="heroBurgerCanvas"></canvas>
       </div>
 
       <!-- RIGHT: Floating product image + chips + spinning badge -->
@@ -1543,35 +1547,74 @@ window.addEventListener('load',()=>{
   }, 1700);
 });
 
-// ─── HERO EXPLODE VIDEO: play → pause at end → resume after 1.4s → loop ───
+// ─── HERO EXPLODE VIDEO: canvas-based dark background removal ───
 (function() {
   const vid = document.getElementById('heroExplodeVideo');
-  if (!vid) return;
+  const canvas = document.getElementById('heroBurgerCanvas');
+  if (!vid || !canvas) return;
 
-  // Ensure no browser UI ever appears
-  vid.controls = false;
-  vid.disablePictureInPicture = true;
-  vid.setAttribute('disablepictureinpicture', '');
-  vid.setAttribute('controlslist', 'nodownload nofullscreen noremoteplayback');
-
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  let animFrame = null;
   let pauseTimer = null;
+  let isDrawing = false;
 
+  // Threshold: pixels darker than this (0–255) per channel get erased.
+  // 55 removes near-black backgrounds while keeping dark burger browns.
+  // Raise it (up to ~80) if any background patches remain; lower if burger edges look clipped.
+  const DARK_THRESHOLD = 55;
+
+  function drawFrame() {
+    if (vid.paused && !isDrawing) return;
+
+    // Match canvas resolution to video
+    if (canvas.width !== vid.videoWidth || canvas.height !== vid.videoHeight) {
+      canvas.width  = vid.videoWidth  || 854;
+      canvas.height = vid.videoHeight || 480;
+    }
+
+    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+
+    // Pixel-level dark key: erase anything that is near-black
+    const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const d = frame.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i+1], b = d[i+2];
+      // If all three channels are below threshold → transparent
+      if (r < DARK_THRESHOLD && g < DARK_THRESHOLD && b < DARK_THRESHOLD) {
+        // Soft edge: alpha proportional to brightness so edge pixels fade smoothly
+        const brightness = Math.max(r, g, b);
+        d[i+3] = Math.round((brightness / DARK_THRESHOLD) * 255 * 0.6);
+      }
+    }
+    ctx.putImageData(frame, 0, 0);
+
+    animFrame = requestAnimationFrame(drawFrame);
+  }
+
+  function startDrawing() {
+    isDrawing = true;
+    cancelAnimationFrame(animFrame);
+    drawFrame();
+  }
+
+  // When video finishes: hold the last frame (fully exploded), pause 1.4s, restart
   vid.addEventListener('ended', () => {
-    // Video finished — it's in the fully-exploded state. Hold for 1.4s then restart.
+    isDrawing = false; // stop the rAF loop — last frame stays on canvas
     clearTimeout(pauseTimer);
     pauseTimer = setTimeout(() => {
       vid.currentTime = 0;
-      vid.play().catch(() => {}); // catch autoplay policy errors silently
+      vid.play().then(startDrawing).catch(() => {});
     }, 1400);
   });
 
-  // Kick off playback as soon as enough data is available
+  // Start everything once video has data
   vid.addEventListener('canplay', () => {
-    vid.play().catch(() => {});
+    vid.play().then(startDrawing).catch(() => {});
   });
 
-  // Prevent right-click context menu on the video (keeps it feeling native)
+  // Block right-click
   vid.addEventListener('contextmenu', e => e.preventDefault());
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
 })();
 
 // ─── SCROLL REVEAL ───
