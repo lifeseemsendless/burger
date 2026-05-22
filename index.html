@@ -244,20 +244,21 @@ nav.scrolled .nav-logo img {
   pointer-events: none;
 }
 
-/* ── FIX: GPU-accelerated video, no canvas loop ── */
+/* ── Video hidden — canvas renders bg-removed frames on top ── */
 .hero-burger-wrap video.hero-burger-video {
+  display: none;
+}
+/* Canvas shows the bg-removed video frames */
+#heroBurgerCanvas {
   width: 100%;
   display: block;
-  /* mix-blend-mode removes the dark background natively via GPU — zero JS pixel loops */
-  mix-blend-mode: lighten;
-  filter: drop-shadow(0 20px 50px rgba(0,0,0,0.25));
-  /* Force GPU compositing layer for smooth playback */
+  filter: drop-shadow(0 20px 50px rgba(0,0,0,0.28));
+  /* GPU layer for smooth compositing */
   will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
+  image-rendering: auto;
 }
-/* Canvas hidden — no longer used */
-#heroBurgerCanvas { display: none !important; }
 
 .hero-chip-sm {
   position: absolute;
@@ -623,9 +624,8 @@ nav.scrolled .nav-logo img {
   height: 14px;
   background: repeating-linear-gradient(90deg, var(--red) 0, var(--red) 14px, var(--white) 14px, var(--white) 28px);
 }
-/* FIX: Reduced from 220px → 165px for better image quality perception */
 .menu-card-img {
-  height: 165px;
+  height: 220px;
   position: relative;
   overflow: hidden;
   background: var(--cream);
@@ -941,7 +941,7 @@ nav.scrolled .nav-logo img {
 .about-img-main {
   position: absolute;
   right: 0; top: 0;
-  width: 65%; height: 65%;
+  width: 85%; height: 80%;
   border-radius: 0 0 0 24px;
   overflow: hidden;
 }
@@ -1041,7 +1041,7 @@ nav.scrolled .nav-logo img {
 }
 .loc-card:hover { border-color: rgba(245,183,0,0.35); transform: translateY(-4px); }
 /* FIX: Reduced from 190px → 140px so image uses less display area = looks sharper */
-.loc-img { height: 140px; overflow: hidden; position: relative; }
+.loc-img { height: 190px; overflow: hidden; position: relative; }
 .loc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
 .loc-card:hover .loc-img img { transform: scale(1.06); }
 .loc-body { padding: 24px; }
@@ -1289,7 +1289,7 @@ footer {
   #s-menu { padding: 60px 18px; }
   .menu-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
   .menu-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .menu-card-img { height: 120px; }
+  .menu-card-img { height: 150px; }
   .menu-card-body { padding: 12px 14px 28px; }
   .menu-card-name { font-size: 0.95rem; }
 
@@ -1402,14 +1402,15 @@ footer {
   <div class="hero-chip-sm hero-chip-1">SMASHED FRESH</div>
   <div class="hero-chip-sm hero-chip-2">BOLD FLAVOR</div>
 
-  <!-- FIX: Video plays directly with mix-blend-mode — no canvas pixel loop, GPU handles bg removal -->
+  <!-- Video source — hidden, canvas renders bg-removed frames -->
   <div class="hero-burger-wrap">
     <video
       id="heroExplodeVideo"
       class="hero-burger-video"
       src="burgerexp.mp4"
-      autoplay muted playsinline loop preload="auto">
+      muted playsinline preload="auto">
     </video>
+    <canvas id="heroBurgerCanvas"></canvas>
     <!-- Fallback image shown if video fails -->
     <img id="heroBurgerImg" src="mainburger.jpeg" alt="Billy Boyz Burger"
       style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;filter:drop-shadow(0 20px 50px rgba(0,0,0,0.25));">
@@ -2101,25 +2102,133 @@ document.getElementById('videoModal').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideo(); });
 
-// ── FIX: Hero video — simple autoplay with fallback, no canvas ──
+// ── HERO VIDEO: Optimized canvas bg-removal ──
+// Strategy: draw video at HALF resolution into an offscreen canvas,
+// do pixel removal there, then draw result to display canvas at full size.
+// This cuts pixel-loop work by 75% (half width × half height).
+// Also uses requestVideoFrameCallback when available to only process
+// on actual new video frames (not every RAF tick).
 (function() {
   const vid = document.getElementById('heroExplodeVideo');
+  const displayCanvas = document.getElementById('heroBurgerCanvas');
   const fallbackImg = document.getElementById('heroBurgerImg');
-  if (!vid) return;
+  if (!vid || !displayCanvas) return;
+
+  const dCtx = displayCanvas.getContext('2d');
+
+  // Offscreen half-res canvas for pixel work
+  const offCanvas = document.createElement('canvas');
+  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+
+  // Bg colour to remove: black (r,g,b all below threshold)
+  // We use a soft edge: pixels near the threshold get partial alpha
+  const THRESHOLD = 60;   // hard cutoff
+  const SOFT = 30;         // feather range below threshold
+
+  let isRunning = false;
+  let useRVFC = typeof vid.requestVideoFrameCallback === 'function';
+
+  function processFrame() {
+    if (!isRunning) return;
+
+    const vw = vid.videoWidth;
+    const vh = vid.videoHeight;
+    if (!vw || !vh) { scheduleNext(); return; }
+
+    // Half-res for processing
+    const hw = Math.floor(vw / 2);
+    const hh = Math.floor(vh / 2);
+
+    if (offCanvas.width !== hw || offCanvas.height !== hh) {
+      offCanvas.width = hw;
+      offCanvas.height = hh;
+      // Display canvas matches video aspect but at full CSS size
+      displayCanvas.width = vw;
+      displayCanvas.height = vh;
+    }
+
+    // Draw video at half size into offscreen canvas
+    offCtx.drawImage(vid, 0, 0, hw, hh);
+
+    const frame = offCtx.getImageData(0, 0, hw, hh);
+    const d = frame.data;
+    const len = d.length;
+
+    for (let i = 0; i < len; i += 4) {
+      const r = d[i], g = d[i+1], b = d[i+2];
+      const brightness = (r + g + b) / 3;
+      if (brightness < THRESHOLD) {
+        // Soft feathering: pixels just above the hard cutoff fade in gradually
+        const alpha = brightness < (THRESHOLD - SOFT)
+          ? 0
+          : Math.round(((brightness - (THRESHOLD - SOFT)) / SOFT) * 255);
+        d[i+3] = alpha;
+      }
+    }
+
+    offCtx.putImageData(frame, 0, 0);
+
+    // Draw the processed half-res result scaled up to display canvas
+    dCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
+    dCtx.drawImage(offCanvas, 0, 0, displayCanvas.width, displayCanvas.height);
+
+    scheduleNext();
+  }
+
+  function scheduleNext() {
+    if (!isRunning) return;
+    if (useRVFC) {
+      vid.requestVideoFrameCallback(processFrame);
+    } else {
+      // Fallback: skip every other RAF frame to halve CPU load
+      requestAnimationFrame(() => requestAnimationFrame(processFrame));
+    }
+  }
+
+  function startProcessing() {
+    if (isRunning) return;
+    isRunning = true;
+    displayCanvas.style.display = 'block';
+    if (fallbackImg) fallbackImg.style.display = 'none';
+    scheduleNext();
+  }
+
+  function stopProcessing() {
+    isRunning = false;
+  }
+
+  vid.addEventListener('canplay', () => {
+    vid.play().then(startProcessing).catch(() => {
+      displayCanvas.style.display = 'none';
+      if (fallbackImg) fallbackImg.style.display = 'block';
+    });
+  });
+
+  vid.addEventListener('ended', () => {
+    // Loop back: brief pause then replay
+    stopProcessing();
+    setTimeout(() => {
+      vid.currentTime = 0;
+      vid.play().then(startProcessing).catch(() => {});
+    }, 800);
+  });
 
   vid.addEventListener('error', () => {
-    vid.style.display = 'none';
+    displayCanvas.style.display = 'none';
     if (fallbackImg) fallbackImg.style.display = 'block';
   });
 
-  // If video can't autoplay (e.g. some browsers), show fallback
-  const playPromise = vid.play();
-  if (playPromise !== undefined) {
-    playPromise.catch(() => {
-      vid.style.display = 'none';
-      if (fallbackImg) fallbackImg.style.display = 'block';
-    });
-  }
+  // Pause processing when tab is hidden — big perf win
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopProcessing();
+    } else if (!vid.paused && !vid.ended) {
+      startProcessing();
+    }
+  });
+
+  vid.addEventListener('contextmenu', e => e.preventDefault());
+  displayCanvas.addEventListener('contextmenu', e => e.preventDefault());
 })();
 
 // ── INIT ──
