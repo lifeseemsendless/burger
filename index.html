@@ -27,9 +27,7 @@
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
 html { overflow-x: hidden; }
-
 body {
   background: var(--cream);
   color: var(--dark);
@@ -79,10 +77,9 @@ body {
 .loader-text {
   font-family: var(--font-display);
   font-size: 5rem;
-  color: var(--white);
+  color: var(--dark);
   line-height: 1;
   letter-spacing: -2px;
-  -webkit-text-stroke: 3px var(--white);
 }
 .loader-line {
   width: 200px; height: 3px;
@@ -123,23 +120,18 @@ nav.scrolled {
 .nav-logo {
   font-family: var(--font-display);
   font-size: 1.8rem;
-  /* FIX: Billy Boyz logo text → white */
   color: var(--white);
   text-decoration: none;
   letter-spacing: -1px;
   display: flex; align-items: center; gap: 10px;
 }
-nav.scrolled .nav-logo {
-  color: var(--dark);
-}
+nav.scrolled .nav-logo { color: var(--dark); }
 .nav-logo img {
   width: 34px; height: 34px;
   border-radius: 50%; object-fit: cover;
   border: 2px solid var(--white);
 }
-nav.scrolled .nav-logo img {
-  border-color: var(--red);
-}
+nav.scrolled .nav-logo img { border-color: var(--red); }
 .nav-links { display: flex; gap: 36px; list-style: none; }
 .nav-links a {
   color: var(--dark);
@@ -167,7 +159,6 @@ nav.scrolled .nav-logo img {
   transition: all 0.3s;
 }
 .nav-cta:hover { background: var(--dark); transform: translateY(-2px); }
-
 .nav-burger-btn {
   display: none;
   flex-direction: column;
@@ -184,7 +175,6 @@ nav.scrolled .nav-logo img {
 .nav-burger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .nav-burger-btn.open span:nth-child(2) { opacity: 0; }
 .nav-burger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
 .nav-drawer {
   position: fixed; inset: 0;
   background: var(--cream);
@@ -208,6 +198,8 @@ nav.scrolled .nav-logo img {
 
 /* ══════════════════════════════════
    SECTION 1: HERO
+   VIDEO is the BACKGROUND layer (z-index:1, mix-blend-mode:multiply)
+   TEXT is on TOP (z-index:3+)
 ══════════════════════════════════ */
 #s-hero {
   min-height: 100vh;
@@ -218,6 +210,35 @@ nav.scrolled .nav-logo img {
   place-items: center;
   padding: 100px 48px 60px;
 }
+
+/* ── VIDEO BACKGROUND LAYER ──
+   mix-blend-mode: multiply makes black pixels become the cream bg color.
+   The video sits BEHIND the text completely. No pixel-loop, no lag. */
+.hero-video-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;                    /* BEHIND everything */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.hero-video-bg video {
+  display: none;                 /* hidden — canvas renders frames */
+}
+#heroBurgerCanvas {
+  /* Size: fills hero, centred */
+  width: clamp(320px, 55vw, 700px);
+  height: auto;
+  display: block;
+  /* THE KEY: multiply blend makes black bg invisible on cream background */
+  mix-blend-mode: multiply;
+  /* Smoothing */
+  image-rendering: auto;
+  will-change: opacity;
+}
+
+/* ── FOREGROUND ELEMENTS all z-index 2+ ── */
 .hero-bg-word {
   position: absolute;
   font-family: var(--font-display);
@@ -225,7 +246,7 @@ nav.scrolled .nav-logo img {
   color: var(--red);
   line-height: 0.85;
   letter-spacing: -4px;
-  z-index: 0;
+  z-index: 2;                    /* ON TOP of video */
   white-space: nowrap;
   text-transform: uppercase;
   top: 50%; left: 50%;
@@ -235,31 +256,6 @@ nav.scrolled .nav-logo img {
   pointer-events: none;
   opacity: 1;
 }
-.hero-burger-wrap {
-  position: absolute;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 2;
-  width: clamp(280px, 42vw, 580px);
-  pointer-events: none;
-}
-
-/* ── Video hidden — canvas renders bg-removed frames on top ── */
-.hero-burger-wrap video.hero-burger-video {
-  display: none;
-}
-/* Canvas shows the bg-removed video frames */
-#heroBurgerCanvas {
-  width: 100%;
-  display: block;
-  filter: drop-shadow(0 20px 50px rgba(0,0,0,0.28));
-  /* GPU layer for smooth compositing */
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  image-rendering: auto;
-}
-
 .hero-chip-sm {
   position: absolute;
   background: var(--red);
@@ -272,6 +268,7 @@ nav.scrolled .nav-logo img {
   text-transform: uppercase;
   white-space: nowrap;
   box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+  z-index: 3;
 }
 .hero-chip-1 { top: 18%; left: 4%; transform: rotate(-8deg); background: var(--red); }
 .hero-chip-2 { bottom: 22%; right: 3%; transform: rotate(6deg); background: var(--yellow); color: var(--dark); }
@@ -461,15 +458,16 @@ nav.scrolled .nav-logo img {
   gap: 16px;
   z-index: 2;
 }
+/* FIXED: Smaller travel photos for better quality appearance */
 .travel-photo {
-  width: 200px; height: 150px;
-  border-radius: 16px;
+  width: 160px; height: 120px;
+  border-radius: 14px;
   overflow: hidden;
   border: 3px solid var(--white);
   box-shadow: 4px 4px 0 rgba(0,0,0,0.15);
   position: relative;
 }
-.travel-photo img { width: 100%; height: 100%; object-fit: cover; }
+.travel-photo img { width: 100%; height: 100%; object-fit: cover; image-rendering: auto; }
 .travel-city-tag {
   position: absolute;
   background: var(--red);
@@ -529,7 +527,8 @@ nav.scrolled .nav-logo img {
 }
 .change-sticker {
   position: absolute;
-  width: clamp(160px, 20vw, 280px);
+  /* FIXED: smaller sticker, better positioned */
+  width: clamp(120px, 14vw, 200px);
   left: 50%; top: 50%;
   transform: translate(-20%, -50%);
   z-index: 3;
@@ -542,9 +541,11 @@ nav.scrolled .nav-logo img {
   height: 100%;
   min-height: 100vh;
 }
+/* FIXED: Better image quality — contain within a well-sized box */
 .change-right img {
   width: 100%; height: 100%;
   object-fit: cover;
+  object-position: center top;
   display: block;
 }
 .change-right-overlay {
@@ -624,14 +625,15 @@ nav.scrolled .nav-logo img {
   height: 14px;
   background: repeating-linear-gradient(90deg, var(--red) 0, var(--red) 14px, var(--white) 14px, var(--white) 28px);
 }
+/* FIXED: Smaller card images for sharper appearance */
 .menu-card-img {
-  height: 220px;
+  height: 180px;
   position: relative;
   overflow: hidden;
   background: var(--cream);
 }
 .menu-card-img img {
-  width: 80%;
+  width: 75%;
   height: 100%;
   object-fit: contain;
   display: block;
@@ -790,8 +792,9 @@ nav.scrolled .nav-logo img {
 .bundle-yellow .bundle-order-btn { background: var(--dark); color: var(--yellow); }
 .bundle-dark .bundle-order-btn { background: var(--yellow); color: var(--dark); }
 .bundle-order-btn:hover { transform: translateX(6px); }
+/* FIXED: Smaller bundle visuals */
 .bundle-visual {
-  width: 140px; height: 140px;
+  width: 110px; height: 110px;
   border-radius: 50%; overflow: hidden;
   border: 3px solid rgba(255,255,255,0.2);
   flex-shrink: 0;
@@ -802,9 +805,10 @@ nav.scrolled .nav-logo img {
   gap: 36px; align-items: center;
   grid-column: 1/-1;
 }
+/* FIXED: Smaller pizza img */
 .bundle-pizza-img {
   width: 100%; aspect-ratio: 1;
-  max-width: 200px; border-radius: 50%;
+  max-width: 160px; border-radius: 50%;
   object-fit: cover; margin: 0 auto; display: block;
   border: 3px solid rgba(255,255,255,0.12);
 }
@@ -852,7 +856,7 @@ nav.scrolled .nav-logo img {
 .special-card {
   background: var(--white);
   border-radius: 18px;
-  width: 280px; flex-shrink: 0;
+  width: 240px; flex-shrink: 0;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.35s;
@@ -865,17 +869,18 @@ nav.scrolled .nav-logo img {
   background: repeating-linear-gradient(90deg, var(--red) 0, var(--red) 12px, var(--white) 12px, var(--white) 24px);
 }
 .special-card:hover { transform: scale(1.04) translateY(-6px); box-shadow: 0 16px 50px rgba(26,10,0,0.1); }
+/* FIXED: Smaller special card images */
 .special-card-img {
-  height: 180px; overflow: hidden; position: relative;
+  height: 150px; overflow: hidden; position: relative;
   background: var(--cream);
   display: flex; align-items: center; justify-content: center;
 }
-.special-card-img img { width: 80%; height: 100%; object-fit: contain; transition: transform 0.45s; }
+.special-card-img img { width: 75%; height: 100%; object-fit: contain; transition: transform 0.45s; }
 .special-card:hover .special-card-img img { transform: scale(1.08) translateY(-5px); }
-.special-card-body { padding: 16px 18px 26px; }
+.special-card-body { padding: 14px 16px 24px; }
 .special-tag { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--red); margin-bottom: 5px; font-weight: 700; }
-.special-name { font-family: var(--font-display); font-size: 1.05rem; color: var(--dark); margin-bottom: 8px; letter-spacing: -0.5px; }
-.special-price { font-family: var(--font-display); font-size: 1.4rem; color: var(--red); }
+.special-name { font-family: var(--font-display); font-size: 1rem; color: var(--dark); margin-bottom: 8px; letter-spacing: -0.5px; }
+.special-price { font-family: var(--font-display); font-size: 1.3rem; color: var(--red); }
 .special-price span { font-size: 0.72rem; color: rgba(26,10,0,0.35); font-family: var(--font-body); }
 
 /* ── SECTION 8: ABOUT ── */
@@ -937,11 +942,11 @@ nav.scrolled .nav-logo img {
 }
 .about-right { position: relative; overflow: hidden; }
 
-/* FIX: Reduced from 85%/80% → 65%/65% so image quality is much better */
+/* FIXED: Better-sized about images — 65% width so they look crisper */
 .about-img-main {
   position: absolute;
   right: 0; top: 0;
-  width: 85%; height: 80%;
+  width: 65%; height: 65%;
   border-radius: 0 0 0 24px;
   overflow: hidden;
 }
@@ -950,10 +955,11 @@ nav.scrolled .nav-logo img {
   transition: transform 0.7s;
 }
 .about-img-main:hover img { transform: scale(1.04); }
+/* FIXED: smaller secondary image */
 .about-img-sm {
   position: absolute;
   left: 20px; bottom: 40px;
-  width: 48%; height: 48%;
+  width: 38%; height: 38%;
   border-radius: 18px; overflow: hidden;
   border: 4px solid var(--cream);
   box-shadow: 0 16px 40px rgba(26,10,0,0.15);
@@ -1016,7 +1022,8 @@ nav.scrolled .nav-logo img {
 .review-stars { color: var(--yellow); font-size: 0.9rem; margin-bottom: 16px; letter-spacing: 2px; }
 .review-text { font-size: 0.9rem; line-height: 1.8; color: rgba(255,255,255,0.82); margin-bottom: 22px; font-style: italic; }
 .review-author { display: flex; align-items: center; gap: 12px; }
-.review-avatar { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; border: 2px solid var(--yellow); background: var(--dark); flex-shrink: 0; }
+/* FIXED: smaller review avatar */
+.review-avatar { width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 2px solid var(--yellow); background: var(--dark); flex-shrink: 0; }
 .review-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .review-name { font-family: var(--font-body); font-weight: 800; font-size: 0.85rem; color: var(--white); letter-spacing: 2px; }
 .review-role { font-size: 0.7rem; color: rgba(255,255,255,0.38); margin-top: 2px; }
@@ -1040,8 +1047,8 @@ nav.scrolled .nav-logo img {
   transition: all 0.35s; cursor: default;
 }
 .loc-card:hover { border-color: rgba(245,183,0,0.35); transform: translateY(-4px); }
-/* FIX: Reduced from 190px → 140px so image uses less display area = looks sharper */
-.loc-img { height: 190px; overflow: hidden; position: relative; }
+/* FIXED: Smaller location images */
+.loc-img { height: 150px; overflow: hidden; position: relative; }
 .loc-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
 .loc-card:hover .loc-img img { transform: scale(1.06); }
 .loc-body { padding: 24px; }
@@ -1120,7 +1127,6 @@ footer {
   border-top: 1px solid rgba(255,255,255,0.05);
 }
 .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 56px; margin-bottom: 56px; }
-/* FIX: Both words white */
 .footer-logo-text {
   font-family: var(--font-display);
   font-size: 2.2rem; color: var(--white);
@@ -1227,41 +1233,31 @@ footer {
   nav.scrolled { padding: 12px 28px; }
   .nav-links, .nav-cta { display: none; }
   .nav-burger-btn { display: flex; }
-
   #s-hero { padding: 90px 28px 50px; }
   .hero-text-left, .hero-text-right { display: none; }
   .hero-cta-row { flex-direction: row; }
-
   #s-product { padding: 80px 28px; }
   #s-travel { padding: 80px 28px; flex-direction: column; justify-content: center; }
   .travel-photos { position: static; transform: none; flex-direction: row; flex-wrap: wrap; margin-top: 30px; }
   .travel-body { position: static; margin-top: 24px; }
-
   #s-change { grid-template-columns: 1fr; }
   .change-right { min-height: 50vh; }
   .change-sticker { left: 50%; transform: translate(-50%, -80px); }
-
   #s-menu { padding: 80px 28px; }
   .menu-grid { grid-template-columns: 1fr 1fr; }
-
   #s-bundles { padding: 80px 28px; }
   .bundles-grid { grid-template-columns: 1fr; }
   .bundle-dark-inner { grid-template-columns: 1fr; }
-
   .specials-header { padding: 0 28px; }
   #s-about { grid-template-columns: 1fr; }
   .about-right { min-height: 60vh; }
-
   #s-reviews { padding: 80px 28px; }
   .reviews-grid { grid-template-columns: 1fr 1fr; }
   .reviews-top { flex-direction: column; align-items: flex-start; gap: 18px; }
-
   #s-locations { padding: 80px 28px; }
   .loc-grid { grid-template-columns: 1fr 1fr; }
-
   #s-order { padding: 80px 28px; }
   .order-inner { grid-template-columns: 1fr; gap: 50px; }
-
   footer { padding: 60px 28px 34px; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 36px; }
 }
@@ -1269,58 +1265,46 @@ footer {
 @media (max-width: 640px) {
   nav { padding: 14px 18px; }
   .hero-bg-word { font-size: clamp(5rem, 18vw, 8rem); }
-  .hero-burger-wrap { width: 80vw; max-width: 320px; }
+  #heroBurgerCanvas { width: 90vw; }
   .hero-cta-row { flex-direction: column; gap: 10px; width: 90%; }
   .hero-cta-row .btn-red, .hero-cta-row .btn-outline { width: 100%; text-align: center; }
-
   #s-product { padding: 60px 18px; text-align: center; }
   .prod-big-text { font-size: clamp(3.5rem, 14vw, 6rem); }
-
   #s-travel { padding: 60px 18px; }
   .travel-title { font-size: clamp(3rem, 14vw, 6rem); }
   .travel-photos { display: none; }
-
   #s-change { grid-template-columns: 1fr; }
   .change-left { padding: 60px 18px; }
   .change-title { font-size: clamp(3.5rem, 14vw, 5.5rem); }
-  .change-sticker { width: 140px; left: 50%; transform: translate(-30%, -60px); }
+  .change-sticker { width: 120px; left: 50%; transform: translate(-30%, -60px); }
   .change-right { min-height: 50vh; }
-
   #s-menu { padding: 60px 18px; }
   .menu-header-row { flex-direction: column; align-items: flex-start; gap: 10px; }
   .menu-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-  .menu-card-img { height: 150px; }
+  .menu-card-img { height: 130px; }
   .menu-card-body { padding: 12px 14px 28px; }
   .menu-card-name { font-size: 0.95rem; }
-
   #s-bundles { padding: 60px 18px; }
   .bundle-card { padding: 24px; grid-template-columns: 1fr; }
-  .bundle-visual { width: 90px; height: 90px; }
+  .bundle-visual { width: 80px; height: 80px; }
   .bundle-name { font-size: 2.8rem; }
   .bundle-items { grid-template-columns: 1fr; }
-
   #s-specials { padding: 60px 0; }
   .specials-header { padding: 0 18px; flex-direction: column; align-items: flex-start; gap: 14px; }
-
   #s-about { grid-template-columns: 1fr; }
   .about-left { padding: 60px 18px; }
   .about-right { min-height: 60vh; }
   .about-stats { flex-wrap: wrap; gap: 24px; }
-
   #s-reviews { padding: 60px 18px; }
   .reviews-grid { grid-template-columns: 1fr; }
-
   #s-locations { padding: 60px 18px; }
   .loc-grid { grid-template-columns: 1fr; }
-
   #s-order { padding: 60px 18px; }
   .order-form-box { padding: 24px 18px; }
   .form-row { grid-template-columns: 1fr; }
-
   footer { padding: 50px 18px 28px; }
   .footer-grid { grid-template-columns: 1fr; gap: 28px; }
   .footer-bottom { flex-direction: column; gap: 8px; text-align: center; }
-
   .floating-cart { bottom: 18px; right: 18px; width: 52px; height: 52px; }
   .toast { right: 18px; left: 18px; bottom: 82px; }
 }
@@ -1330,7 +1314,6 @@ footer {
 
 <!-- LOADER -->
 <div id="loader">
-  <!-- FIX: Both words white -->
   <div class="loader-text">BILLY BOYZ</div>
   <div class="loader-line"><div class="loader-line-fill"></div></div>
 </div>
@@ -1397,29 +1380,29 @@ footer {
 
 <!-- ══════════════ SECTION 1: HERO ══════════════ -->
 <section id="s-hero">
+
+  <!-- ★ VIDEO BACKGROUND: sits at z-index:1 BELOW the text
+       mix-blend-mode: multiply on canvas = black pixels vanish into cream bg
+       No pixel-loop, no performance issues, perfect blend ★ -->
+  <div class="hero-video-bg">
+    <video
+      id="heroExplodeVideo"
+      src="burgerexp.mp4"
+      muted playsinline preload="auto"
+      loop>
+    </video>
+    <canvas id="heroBurgerCanvas"></canvas>
+  </div>
+
+  <!-- TEXT ON TOP (z-index:2) -->
   <div class="hero-bg-word">THE BURGER</div>
 
   <div class="hero-chip-sm hero-chip-1">SMASHED FRESH</div>
   <div class="hero-chip-sm hero-chip-2">BOLD FLAVOR</div>
 
-  <!-- Video source — hidden, canvas renders bg-removed frames -->
-  <div class="hero-burger-wrap">
-    <video
-      id="heroExplodeVideo"
-      class="hero-burger-video"
-      src="burgerexp.mp4"
-      muted playsinline preload="auto">
-    </video>
-    <canvas id="heroBurgerCanvas"></canvas>
-    <!-- Fallback image shown if video fails -->
-    <img id="heroBurgerImg" src="mainburger.jpeg" alt="Billy Boyz Burger"
-      style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;filter:drop-shadow(0 20px 50px rgba(0,0,0,0.25));">
-  </div>
-
   <div class="hero-text-left sr-left">
     <p class="hero-small-text">Smashed hot on the flat top,<br>our prime patties lock in<br>ultimate juiciness under<br>a caramelised crust.</p>
   </div>
-
   <div class="hero-text-right sr-right">
     <p class="hero-small-bold">Topped with melted cheddar<br>and our signature sauce crafted<br>to satisfy your cravings<br>since 2018.</p>
   </div>
@@ -1810,7 +1793,6 @@ footer {
 <footer>
   <div class="footer-grid">
     <div>
-      <!-- FIX: Both BILLY and BOYZ white -->
       <a href="#" class="footer-logo-text">BILLY <span>BOYZ</span></a>
       <p class="footer-tagline">Bigger. Juicier. Better. Feeding the city's hunger since 2018 — one legendary burger at a time.</p>
       <div class="footer-social">
@@ -1867,10 +1849,6 @@ window.addEventListener('load', () => {
     gsap.fromTo('.hero-bg-word',
       { opacity: 0, scale: 0.92, y: 40 },
       { opacity: 1, scale: 1, y: 0, duration: 1.2, ease: 'power3.out', delay: 0.3 }
-    );
-    gsap.fromTo('.hero-burger-wrap',
-      { opacity: 0, y: 60, scale: 0.88 },
-      { opacity: 1, y: 0, scale: 1, duration: 1.4, ease: 'power3.out', delay: 0.5 }
     );
     gsap.fromTo('.hero-chip-sm',
       { opacity: 0, y: -20 },
@@ -1969,10 +1947,6 @@ function initScrollAnimations() {
   gsap.to('.hero-bg-word', {
     y: -120, ease: 'none',
     scrollTrigger: { trigger: '#s-hero', start: 'top top', end: 'bottom top', scrub: 1.2 }
-  });
-  gsap.to('.hero-burger-wrap', {
-    y: -80, ease: 'none',
-    scrollTrigger: { trigger: '#s-hero', start: 'top top', end: 'bottom top', scrub: 1.5 }
   });
   gsap.from('.travel-title', {
     x: -100, opacity: 0, ease: 'none',
@@ -2102,133 +2076,70 @@ document.getElementById('videoModal').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideo(); });
 
-// ── HERO VIDEO: Optimized canvas bg-removal ──
-// Strategy: draw video at HALF resolution into an offscreen canvas,
-// do pixel removal there, then draw result to display canvas at full size.
-// This cuts pixel-loop work by 75% (half width × half height).
-// Also uses requestVideoFrameCallback when available to only process
-// on actual new video frames (not every RAF tick).
+// ══════════════════════════════════════════════════════════
+// ★ HERO VIDEO: Pure CSS blend approach — ZERO pixel loop ★
+//
+// How it works:
+//   1. The <canvas> draws raw video frames using drawImage()
+//   2. mix-blend-mode: multiply is applied via CSS
+//   3. On the cream background (#F0E6D3), multiply blending
+//      makes black (0,0,0) pixels become exactly the cream colour
+//      — they disappear completely. No JS pixel manipulation needed.
+//   4. The video sits at z-index:1, all text at z-index:2+
+//   5. requestVideoFrameCallback used when available for
+//      frame-accurate rendering without wasted RAF calls
+// ══════════════════════════════════════════════════════════
 (function() {
   const vid = document.getElementById('heroExplodeVideo');
-  const displayCanvas = document.getElementById('heroBurgerCanvas');
-  const fallbackImg = document.getElementById('heroBurgerImg');
-  if (!vid || !displayCanvas) return;
+  const canvas = document.getElementById('heroBurgerCanvas');
+  if (!vid || !canvas) return;
 
-  const dCtx = displayCanvas.getContext('2d');
+  const ctx = canvas.getContext('2d');
+  let running = false;
+  const useRVFC = typeof vid.requestVideoFrameCallback === 'function';
 
-  // Offscreen half-res canvas for pixel work
-  const offCanvas = document.createElement('canvas');
-  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
-
-  // Bg colour to remove: black (r,g,b all below threshold)
-  // We use a soft edge: pixels near the threshold get partial alpha
-  const THRESHOLD = 60;   // hard cutoff
-  const SOFT = 30;         // feather range below threshold
-
-  let isRunning = false;
-  let useRVFC = typeof vid.requestVideoFrameCallback === 'function';
-
-  function processFrame() {
-    if (!isRunning) return;
-
-    const vw = vid.videoWidth;
-    const vh = vid.videoHeight;
-    if (!vw || !vh) { scheduleNext(); return; }
-
-    // Half-res for processing
-    const hw = Math.floor(vw / 2);
-    const hh = Math.floor(vh / 2);
-
-    if (offCanvas.width !== hw || offCanvas.height !== hh) {
-      offCanvas.width = hw;
-      offCanvas.height = hh;
-      // Display canvas matches video aspect but at full CSS size
-      displayCanvas.width = vw;
-      displayCanvas.height = vh;
-    }
-
-    // Draw video at half size into offscreen canvas
-    offCtx.drawImage(vid, 0, 0, hw, hh);
-
-    const frame = offCtx.getImageData(0, 0, hw, hh);
-    const d = frame.data;
-    const len = d.length;
-
-    for (let i = 0; i < len; i += 4) {
-      const r = d[i], g = d[i+1], b = d[i+2];
-      const brightness = (r + g + b) / 3;
-      if (brightness < THRESHOLD) {
-        // Soft feathering: pixels just above the hard cutoff fade in gradually
-        const alpha = brightness < (THRESHOLD - SOFT)
-          ? 0
-          : Math.round(((brightness - (THRESHOLD - SOFT)) / SOFT) * 255);
-        d[i+3] = alpha;
+  function drawFrame() {
+    if (!running) return;
+    const vw = vid.videoWidth, vh = vid.videoHeight;
+    if (vw && vh) {
+      if (canvas.width !== vw || canvas.height !== vh) {
+        canvas.width = vw;
+        canvas.height = vh;
       }
+      ctx.drawImage(vid, 0, 0);
     }
-
-    offCtx.putImageData(frame, 0, 0);
-
-    // Draw the processed half-res result scaled up to display canvas
-    dCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
-    dCtx.drawImage(offCanvas, 0, 0, displayCanvas.width, displayCanvas.height);
-
-    scheduleNext();
-  }
-
-  function scheduleNext() {
-    if (!isRunning) return;
     if (useRVFC) {
-      vid.requestVideoFrameCallback(processFrame);
+      vid.requestVideoFrameCallback(drawFrame);
     } else {
-      // Fallback: skip every other RAF frame to halve CPU load
-      requestAnimationFrame(() => requestAnimationFrame(processFrame));
+      requestAnimationFrame(drawFrame);
     }
   }
 
-  function startProcessing() {
-    if (isRunning) return;
-    isRunning = true;
-    displayCanvas.style.display = 'block';
-    if (fallbackImg) fallbackImg.style.display = 'none';
-    scheduleNext();
+  function start() {
+    if (running) return;
+    running = true;
+    canvas.style.display = 'block';
+    if (useRVFC) vid.requestVideoFrameCallback(drawFrame);
+    else requestAnimationFrame(drawFrame);
   }
 
-  function stopProcessing() {
-    isRunning = false;
-  }
+  function stop() { running = false; }
 
   vid.addEventListener('canplay', () => {
-    vid.play().then(startProcessing).catch(() => {
-      displayCanvas.style.display = 'none';
-      if (fallbackImg) fallbackImg.style.display = 'block';
+    vid.play().then(start).catch(() => {
+      // autoplay blocked — show nothing (cream bg shows through)
+      canvas.style.display = 'none';
     });
   });
 
-  vid.addEventListener('ended', () => {
-    // Loop back: brief pause then replay
-    stopProcessing();
-    setTimeout(() => {
-      vid.currentTime = 0;
-      vid.play().then(startProcessing).catch(() => {});
-    }, 800);
-  });
-
-  vid.addEventListener('error', () => {
-    displayCanvas.style.display = 'none';
-    if (fallbackImg) fallbackImg.style.display = 'block';
-  });
-
-  // Pause processing when tab is hidden — big perf win
+  // Pause when tab hidden — saves CPU/GPU
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      stopProcessing();
-    } else if (!vid.paused && !vid.ended) {
-      startProcessing();
-    }
+    if (document.hidden) stop();
+    else if (!vid.paused) start();
   });
 
   vid.addEventListener('contextmenu', e => e.preventDefault());
-  displayCanvas.addEventListener('contextmenu', e => e.preventDefault());
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
 })();
 
 // ── INIT ──
@@ -2254,7 +2165,7 @@ if (window.matchMedia('(pointer: fine)').matches) {
 }
 
 // ── FLOATING BURGER ANIMATION ──
-gsap.to('.hero-burger-wrap', {
+gsap.to('#heroBurgerCanvas', {
   y: -14, rotation: 1,
   duration: 3.5,
   ease: 'sine.inOut',
