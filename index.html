@@ -235,31 +235,36 @@ nav.scrolled {
 }
 
 /* ─────────────────────────────────────
-   FIX 1 + 2: Hero burger video wrapper
-   - Moved up 60px on desktop (top: calc(50% - 60px))
-   - Video uses mix-blend-mode: screen → no JS pixel loop needed
+   Hero burger video wrapper
+   - Moved up 60px on desktop
+   - Canvas used for chroma-key black removal
    ───────────────────────────────────── */
 .hero-burger-wrap {
   position: absolute;
   left: 50%;
-  top: calc(50% - 60px); /* FIX 1: shift up on desktop */
+  top: calc(50% - 60px);
   transform: translate(-50%, -50%);
   z-index: 2;
   width: clamp(280px, 42vw, 580px);
   pointer-events: none;
 }
 
-/* FIX 2: CSS blend mode removes black background — GPU accelerated, zero lag */
+/* Video hidden — canvas renders the transparent version */
 .hero-burger-video {
-  display: block !important;
-  width: 100%;
-  mix-blend-mode: screen; /* black = fully transparent, colors pass through */
-  filter: drop-shadow(0 20px 50px rgba(0,0,0,0.18));
-  /* No canvas, no JS pixel loop — pure GPU compositing */
+  display: none !important;
+  position: absolute;
+  width: 1px; height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* Hide the canvas (no longer needed) */
-#heroBurgerCanvas { display: none !important; }
+/* Canvas shows the chroma-keyed output */
+#heroBurgerCanvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 16px 40px rgba(0,0,0,0.22));
+}
 
 .hero-burger-wrap img {
   width: 100%;
@@ -270,7 +275,7 @@ nav.scrolled {
 /* On mobile: restore centered position */
 @media (max-width: 640px) {
   .hero-burger-wrap {
-    top: 50%; /* back to center on mobile where it already looks right */
+    top: 50%;
     width: 80vw;
     max-width: 320px;
   }
@@ -654,20 +659,22 @@ nav.scrolled {
   background: repeating-linear-gradient(90deg, var(--red) 0, var(--red) 14px, var(--white) 14px, var(--white) 28px);
 }
 .menu-card-img {
-  height: 220px;
+  height: 200px;
   position: relative;
   overflow: hidden;
   background: var(--cream);
 }
 .menu-card-img img {
-  width: 80%;
+  width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center;
   display: block;
-  margin: 0 auto;
   transition: transform 0.5s ease;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
-.menu-card:hover .menu-card-img img { transform: scale(1.05) translateY(-6px); }
+.menu-card:hover .menu-card-img img { transform: scale(1.06) translateY(-4px); }
 .menu-card-add {
   position: absolute;
   top: 14px; right: 14px;
@@ -770,8 +777,8 @@ nav.scrolled {
 .special-card::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 12px; background: repeating-linear-gradient(90deg, var(--red) 0, var(--red) 12px, var(--white) 12px, var(--white) 24px); }
 .special-card:hover { transform: scale(1.04) translateY(-6px); box-shadow: 0 16px 50px rgba(26,10,0,0.1); }
 .special-card-img { height: 180px; overflow: hidden; position: relative; background: var(--cream); display: flex; align-items: center; justify-content: center; }
-.special-card-img img { width: 80%; height: 100%; object-fit: contain; transition: transform 0.45s; }
-.special-card:hover .special-card-img img { transform: scale(1.08) translateY(-5px); }
+.special-card-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; transition: transform 0.45s; }
+.special-card:hover .special-card-img img { transform: scale(1.06) translateY(-3px); }
 .special-card-body { padding: 16px 18px 26px; }
 .special-tag { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--red); margin-bottom: 5px; font-weight: 700; }
 .special-name { font-family: var(--font-display); font-size: 1.05rem; color: var(--dark); margin-bottom: 8px; letter-spacing: -0.5px; }
@@ -1067,15 +1074,17 @@ footer { background: var(--dark); padding: 80px 48px 40px; border-top: 1px solid
   <div class="hero-chip-sm hero-chip-1">SMASHED FRESH</div>
   <div class="hero-chip-sm hero-chip-2">BOLD FLAVOR</div>
 
-  <!-- FIX 2: Video now shown directly with mix-blend-mode: screen (no canvas pixel loop) -->
+  <!-- Video plays offscreen, canvas shows the chroma-keyed result -->
   <div class="hero-burger-wrap">
     <video
       id="heroExplodeVideo"
       class="hero-burger-video"
       src="burgerexp.mp4"
-      autoplay muted playsinline loop preload="auto"
-      crossorigin="anonymous">
+      muted playsinline preload="auto"
+      crossorigin="anonymous"
+      style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">
     </video>
+    <canvas id="heroBurgerCanvas" style="display:none;"></canvas>
     <!-- Fallback image if video fails -->
     <img id="heroBurgerImg" src="mainburger.jpeg" alt="Billy Boyz Burger"
       style="display:none; width:100%; filter:drop-shadow(0 20px 50px rgba(0,0,0,0.25));">
@@ -1656,24 +1665,123 @@ document.getElementById('videoModal').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVideo(); });
 
-// ── FIX 2: Simple video fallback (no canvas, no pixel loop) ──
-// mix-blend-mode: screen handles black removal via GPU.
-// Just handle the error case to show fallback image.
+// ── HERO VIDEO: Optimized canvas chroma-key black removal ──
+// Runs at throttled 30fps (not 60) to save CPU. Uses requestAnimationFrame
+// with timestamp throttle. Black pixels are made transparent cleanly.
 (function() {
   const vid = document.getElementById('heroExplodeVideo');
+  const canvas = document.getElementById('heroBurgerCanvas');
   const fallbackImg = document.getElementById('heroBurgerImg');
-  if (!vid) return;
-  vid.addEventListener('error', () => {
-    vid.style.display = 'none';
-    if (fallbackImg) fallbackImg.style.display = 'block';
+  if (!vid || !canvas) return;
+
+  const ctx = canvas.getContext('2d', { willReadFrequently: true, alpha: true });
+  const TARGET_FPS = 30;
+  const FRAME_MS = 1000 / TARGET_FPS;
+  const BLACK_THRESH = 40;   // pixels darker than this = transparent
+  const EDGE_SOFTEN = 60;    // soft edge zone for anti-aliasing the removal
+
+  let running = false;
+  let lastFrameTime = 0;
+  let animId = null;
+
+  function processFrame(timestamp) {
+    if (!running) return;
+
+    // Throttle to TARGET_FPS
+    if (timestamp - lastFrameTime < FRAME_MS) {
+      animId = requestAnimationFrame(processFrame);
+      return;
+    }
+    lastFrameTime = timestamp;
+
+    // Match canvas size to video
+    if (canvas.width !== vid.videoWidth || canvas.height !== vid.videoHeight) {
+      canvas.width = vid.videoWidth || 854;
+      canvas.height = vid.videoHeight || 480;
+    }
+
+    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    const len = data.length;
+
+    for (let i = 0; i < len; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+
+      if (brightness < BLACK_THRESH) {
+        // Fully transparent for dark pixels
+        data[i + 3] = 0;
+      } else if (brightness < EDGE_SOFTEN) {
+        // Soft edge — partial transparency for anti-aliased borders
+        const alpha = Math.round(((brightness - BLACK_THRESH) / (EDGE_SOFTEN - BLACK_THRESH)) * 255);
+        data[i + 3] = alpha;
+      }
+      // else: keep full opacity (the burger content)
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    animId = requestAnimationFrame(processFrame);
+  }
+
+  function startRendering() {
+    running = true;
+    if (canvas.style.display === 'none') canvas.style.display = 'block';
+    if (fallbackImg) fallbackImg.style.display = 'none';
+    animId = requestAnimationFrame(processFrame);
+  }
+
+  function stopRendering() {
+    running = false;
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+  }
+
+  // Pause processing when tab is hidden (saves battery/CPU)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopRendering();
+    else if (vid && !vid.paused) startRendering();
   });
-  // If video can't autoplay, show fallback
+
+  // Also pause when video scrolls out of view
+  const vidObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        if (!vid.paused) startRendering();
+      } else {
+        stopRendering();
+      }
+    });
+  }, { threshold: 0.1 });
+  vidObs.observe(canvas);
+
   vid.addEventListener('canplay', () => {
-    vid.play().catch(() => {
-      vid.style.display = 'none';
+    vid.play().then(() => {
+      startRendering();
+    }).catch(() => {
+      canvas.style.display = 'none';
       if (fallbackImg) fallbackImg.style.display = 'block';
     });
   });
+
+  vid.addEventListener('ended', () => {
+    stopRendering();
+    setTimeout(() => {
+      vid.currentTime = 0;
+      vid.play().then(() => startRendering()).catch(() => {});
+    }, 1200);
+  });
+
+  vid.addEventListener('error', () => {
+    stopRendering();
+    canvas.style.display = 'none';
+    if (fallbackImg) fallbackImg.style.display = 'block';
+  });
+
+  vid.addEventListener('contextmenu', e => e.preventDefault());
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
 })();
 
 // ── INIT ──
