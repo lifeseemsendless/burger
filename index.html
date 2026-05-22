@@ -1,806 +1,985 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billy Boyz — Bigger. Juicier. Better.</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Righteous&family=DM+Sans:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          cream: '#F0E6D3',
-          cream2: '#EAD9C0',
-          redPrimary: '#D91212',
-          redDark: '#AA0A0A',
-          yellowPrimary: '#F5B700',
-          yellow2: '#FFC929',
-          dark: '#1A0A00',
-        },
-        fontFamily: {
-          display: ['Alfa Slab One', 'serif'],
-          sub: ['Righteous', 'sans-serif'],
-          sans: ['DM Sans', 'sans-serif'],
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Billy Boyz | Legendary Smashed Burgers</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Righteous&family=DM+Sans:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (Play CDN for standalone single-file running) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cream: '#F0E6D3',
+              cream2: '#EAD9C0',
+              'red-primary': '#D91212',
+              'red-dark': '#AA0A0A',
+              'yellow-primary': '#F5B700',
+              'yellow2': '#FFC929',
+              dark: '#1A0A00',
+            },
+            fontFamily: {
+              display: ['"Alfa Slab One"', 'serif'],
+              sub: ['Righteous', 'sans-serif'],
+              sans: ['"DM Sans"', 'sans-serif'],
+            }
+          }
         }
       }
-    }
-  }
-</script>
-<style>
-/* Custom animations & interactive page styling */
-html { scroll-behavior: smooth; overflow-x: hidden; }
-body { background: #F0E6D3; color: #1A0A00; cursor: none; }
-@media (pointer: coarse) { body { cursor: auto; } }
-
-/* Keyframe scrolling tickers */
-@keyframes tickerGo {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.animate-ticker { animation: tickerGo 22s linear infinite; }
-
-@keyframes marqueeGo {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-.animate-marquee { animation: marqueeGo 32s linear infinite; }
-
-/* Custom scrollbar matching brand theme */
-::-webkit-scrollbar { width: 10px; }
-::-webkit-scrollbar-track { background: #F0E6D3; }
-::-webkit-scrollbar-thumb { background: #D91212; border-radius: 5px; }
-</style>
-</head>
-<body class="selection:bg-redPrimary/10 selection:text-redPrimary">
-
-<!-- Cursor design -->
-<div id="cursor-dot" class="fixed top-0 left-0 w-4.5 h-4.5 rounded-full pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2 transition-[transform,width,height] duration-200" style="background: radial-gradient(circle at 40% 35%, #6abf4b 0%, #2e8b00 60%, #1a5500 100%); border: 1.5px solid rgba(255,255,255,0.7);"></div>
-<div id="cursor-ring" class="fixed top-0 left-0 w-12 h-12 rounded-full border border-redPrimary/40 pointer-events-none z-[9998] -translate-x-1/2 -translate-y-1/2 transition-[width,height] duration-200"></div>
-
-<!-- Loader Screen -->
-<div id="loader" class="fixed inset-0 bg-cream z-[99999] flex flex-col items-center justify-center gap-5 transition-opacity duration-500">
-  <div class="font-display text-5xl md:text-7xl text-white tracking-widest" style="-webkit-text-stroke: 2.5px #D91212;">BILLY BOYZ</div>
-  <div class="w-48 h-1 bg-redPrimary/10 rounded-full overflow-hidden">
-    <div class="h-full bg-redPrimary w-0 transition-all" id="loader-fill" style="width: 100%; transition: width 1.5s cubic-bezier(0.1, 0.8, 0.25, 1);"></div>
-  </div>
-</div>
-
-<div id="progress" class="fixed top-0 left-0 h-1 bg-redPrimary z-[9999] origin-left scale-x-0 w-full"></div>
-
-<!-- Navigation Bar -->
-<nav id="navbar" class="fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 md:px-12 py-5 transition-all duration-300">
-  <a href="#" class="font-display text-2xl text-white flex items-center gap-3 transition-colors duration-200" id="nav-logo">
-    <img src="logo.jpeg" alt="Billy Boyz" class="w-9 h-9 rounded-full object-cover border-2 border-white/70 shadow-sm">
-    <span>BILLY BOYZ</span>
-  </a>
-  <ul class="hidden md:flex items-center gap-9 list-none">
-    <li><a href="#s-menu" class="text-dark font-bold text-xs uppercase tracking-widest hover:text-redPrimary transition-colors">Menu</a></li>
-    <li><a href="#s-bundles" class="text-dark font-bold text-xs uppercase tracking-widest hover:text-redPrimary transition-colors">Bundles</a></li>
-    <li><a href="#s-order" class="text-dark font-bold text-xs uppercase tracking-widest hover:text-redPrimary transition-colors">Order</a></li>
-    <li><a href="#s-specials" class="text-dark font-bold text-xs uppercase tracking-widest hover:text-redPrimary transition-colors">Specials</a></li>
-    <li><a href="#s-reviews" class="text-dark font-bold text-xs uppercase tracking-widest hover:text-redPrimary transition-colors">Reviews</a></li>
-  </ul>
-  <button class="hidden md:block bg-redPrimary hover:bg-dark text-white px-7 py-3 rounded-full uppercase tracking-widest font-extrabold text-[10px] transition-all" onclick="smoothScrollTo('#s-order')">Order Now</button>
-  <button class="md:hidden flex flex-col gap-1.5 cursor-pointer bg-transparent border-none p-2" onclick="toggleDrawer()">
-    <span class="block w-6 h-0.5 bg-dark"></span>
-    <span class="block w-6 h-0.5 bg-dark"></span>
-    <span class="block w-6 h-0.5 bg-dark"></span>
-  </button>
-</nav>
-
-<!-- Mobile Navigation Drawer -->
-<div id="navDrawer" class="fixed inset-0 bg-cream z-[999] flex flex-col items-center justify-center gap-8 opacity-0 pointer-events-none transition-all duration-300">
-  <button class="absolute top-6 right-6 text-2xl font-bold bg-transparent border-none" onclick="toggleDrawer()">✕</button>
-  <a href="#s-menu" onclick="toggleDrawer()" class="font-display text-4xl hover:text-redPrimary">Menu</a>
-  <a href="#s-bundles" onclick="toggleDrawer()" class="font-display text-4xl hover:text-redPrimary">Bundles</a>
-  <a href="#s-order" onclick="toggleDrawer()" class="font-display text-4xl hover:text-redPrimary">Order</a>
-  <a href="#s-specials" onclick="toggleDrawer()" class="font-display text-4xl hover:text-redPrimary">Specials</a>
-  <a href="#s-reviews" onclick="toggleDrawer()" class="font-display text-4xl hover:text-redPrimary">Reviews</a>
-</div>
-
-<!-- FLOATING CART -->
-<button class="fixed bottom-8 right-8 bg-redPrimary hover:bg-dark text-white w-14 h-14 rounded-full flex items-center justify-center z-[90] shadow-xl hover:scale-105 transition-all outline-none border-none group" onclick="smoothScrollTo('#s-order')">
-  <span class="text-xl group-hover:-rotate-12 transition-transform duration-300">🛒</span>
-  <span id="cartCount" class="absolute -top-1 -right-1 bg-yellowPrimary text-dark font-black text-xs w-5 h-5 rounded-full flex items-center justify-center">0</span>
-</button>
-
-<div id="toast" class="fixed bottom-24 right-8 z-[9000] bg-white border border-redPrimary/20 rounded-2xl p-4 flex items-center gap-4 shadow-2xl opacity-0 translate-y-5 transition-all duration-300 pointer-events-none min-w-[240px]">
-  <div class="w-10 h-10 bg-cream rounded-full flex items-center justify-center text-xl text-red-primary">🍔</div>
-  <div>
-    <p id="toastName" class="font-bold text-xs tracking-wide text-dark uppercase"></p>
-    <p class="text-[9px] uppercase font-bold text-redPrimary/80 mt-0.5">Added to your checkout cart!</p>
-  </div>
-</div>
-
-<!-- ══════════════ SECTION 1: HERO ══════════════ -->
-<section id="s-hero" class="relative min-h-screen bg-cream flex flex-col justify-center items-center px-6 md:px-12 py-24 overflow-hidden">
-  <h1 class="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center font-display text-[15vw] md:text-[18vw] leading-none text-redPrimary select-none z-[11] tracking-tight whitespace-nowrap overflow-hidden">
-    THE BURGER
-  </h1>
-  
-  <!-- Hidden video link tag. When hosted on GitHub Pages: src="burgerexp.mp4" -->
-  <video id="heroVid" src="burgerexp.mp4" muted playsinline preload="auto" loop style="display:none" crossOrigin="anonymous"></video>
-  <canvas id="heroBurgerCanvas" class="w-full max-w-[320px] sm:max-w-[480px] md:max-w-[700px] aspect-square z-[12] pointer-events-none mt-10 md:mt-0 transition-transform duration-500 hover:scale-105"></canvas>
-  
-  <div class="absolute top-[18%] left-[6%] z-[13] -rotate-[8deg] bg-redPrimary text-white font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">SMASHED FRESH</div>
-  <div class="absolute bottom-[22%] right-[6%] z-[13] rotate-[6deg] bg-yellowPrimary text-dark font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">BOLD FLAVOR</div>
-
-  <div class="absolute left-12 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-left">
-    <p class="text-dark/70 font-semibold text-xs leading-relaxed uppercase tracking-wider">Smashed hot on the flat top, our prime patties lock in ultimate juiciness under a caramelized crust.</p>
-  </div>
-  <div class="absolute right-12 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-right">
-    <p class="text-dark/70 font-bold text-xs leading-relaxed uppercase tracking-wider">Topped with melted cheddar and our signature sauce crafted to satisfy your cravings since 2018.</p>
-  </div>
-
-  <div class="flex flex-col sm:flex-row items-center gap-4 z-[13] mt-8 w-full sm:w-auto px-6">
-    <button class="w-full sm:w-auto bg-redPrimary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-9 py-4.5 rounded-full shadow-lg transition-all duration-300" onclick="smoothScrollTo('#s-menu')">Explore Menu</button>
-    <button class="w-full sm:w-auto border-2 border-dark hover:bg-dark hover:text-white text-dark font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-full transition-all duration-300 flex items-center justify-center gap-2" onclick="openVideoModal()"><span class="text-[9px]">▶</span> Watch Our Story</button>
-  </div>
-</section>
-
-<!-- ── LOOPING TICKER BAND ── -->
-<div class="relative bg-redPrimary py-4 border-y-2 border-dark/10 overflow-hidden w-full select-none">
-  <div class="flex w-[200%] animate-ticker whitespace-nowrap">
-    <div class="inline-flex items-center gap-16 mr-16">
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">DOUBLE TROUBLE BURGER</span><span class="text-yellowPrimary text-[8px]">●</span>
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CHEESE STACK PIZZA</span><span class="text-yellowPrimary text-[8px]">●</span>
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CRUNCH PACK $37.9</span><span class="text-yellowPrimary text-[8px]">●</span>
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">HAWAIIAN BURGER</span><span class="text-yellowPrimary text-[8px]">●</span>
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">FREE DELIVERY TODAY</span><span class="text-yellowPrimary text-[8px]">●</span>
-    </div>
-    <div class="inline-flex items-center gap-16 mr-16">
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">DOUBLE TROUBLE BURGER</span><span class="text-yellowPrimary text-[8px]">●</span>
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CHEESE STACK PIZZA</span><span class="text-yellowPrimary text-[8px]">●</span>
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CRUNCH PACK $37.9</span><span class="text-yellowPrimary text-[8px]">●</span>
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">HAWAIIAN BURGER</span><span class="text-yellowPrimary text-[8px]">●</span>
-      <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">FREE DELIVERY TODAY</span><span class="text-yellowPrimary text-[8px]">●</span>
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════ SECTION 2: PRODUCT ══════════════ -->
-<section id="s-product" class="relative flex flex-col items-center justify-center text-center px-6 md:px-12 py-24 bg-cream">
-  <div class="mb-5 flex flex-col items-center gap-3">
-    <div class="w-16 h-16 rounded-full bg-yellowPrimary border-2 border-dark flex items-center justify-center p-1 shadow-md">
-      <img src="logo.jpeg" alt="" class="w-full h-full object-cover rounded-full">
-    </div>
-    <span class="font-sub text-[10px] tracking-widest text-dark/50 uppercase">Top Classic</span>
-  </div>
-  <h2 class="font-display text-4xl sm:text-6xl md:text-8xl text-redPrimary leading-tight tracking-tight">JUICY CHEESY<br>FULLY LOADED</h2>
-  <p class="text-dark/70 font-semibold text-xs sm:text-sm leading-relaxed max-w-[585px] mt-6 uppercase tracking-wider">Billy Boyz is back and bolder than ever. Honouring our rich roots, we bring you the ultimate smashed experience — fully loaded, hot, and crafted fresh.</p>
-  <button class="bg-redPrimary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full mt-8" onclick="smoothScrollTo('#s-menu')">Order Now</button>
-</section>
-
-<!-- ══════════════ SECTION 3: TRAVEL ══════════════ -->
-<section id="s-travel" class="bg-yellowPrimary relative flex flex-col lg:flex-row lg:items-center justify-between px-6 md:px-16 py-24 gap-12 overflow-hidden">
-  <div class="max-w-[700px] z-[2]">
-    <h2 class="font-display text-5xl sm:text-7xl md:text-9xl text-white tracking-widest leading-[0.88] drop-shadow-md">QUALITY THAT<br>TRAVELS WITH YOU</h2>
-  </div>
-  <div class="max-w-[360px] flex flex-col gap-5 z-[2]">
-    <p class="text-dark/85 font-semibold text-xs sm:text-sm leading-relaxed uppercase tracking-wider">Freshly packed smash burgers, ready to go wherever you crave. From our flat-top to any corner of the city, we ensure every layer stays hot and juicy.</p>
-    <button class="w-fit bg-redPrimary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full" onclick="smoothScrollTo('#s-menu')">Explore Menu</button>
-  </div>
-  <div class="flex gap-4 self-center lg:self-auto mt-6 lg:mt-0 z-[2]">
-    <div class="relative w-36 h-28 sm:w-44 sm:h-36 rounded-2xl overflow-hidden border-4 border-white shadow-xl -rotate-6">
-      <img src="burger4.jpeg" alt="" class="w-full h-full object-cover">
-      <span class="absolute top-2 left-1/2 -translate-x-1/2 bg-redPrimary text-white font-display text-[9px] px-3 py-1 rounded">Downtown</span>
-    </div>
-    <div class="relative w-36 h-28 sm:w-44 sm:h-36 rounded-2xl overflow-hidden border-4 border-white shadow-xl rotate-6 mt-6">
-      <img src="burger3.jpeg" alt="" class="w-full h-full object-cover">
-      <span class="absolute top-2 left-1/2 -translate-x-1/2 bg-redPrimary text-white font-display text-[9px] px-3 py-1 rounded">Westside</span>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ SECTION 4: CHANGE ══════════════ -->
-<section id="s-change" class="grid grid-cols-1 md:grid-cols-2 bg-cream overflow-hidden">
-  <div class="relative flex flex-col justify-center px-6 sm:px-12 md:px-16 py-20">
-    <h2 class="font-display text-5xl sm:text-7xl md:text-8xl text-redPrimary leading-none tracking-tight">FEEL THE<br>CHANGE</h2>
-    <p class="text-dark/75 font-semibold text-xs sm:text-sm leading-relaxed max-w-[360px] mt-6 mb-8 uppercase tracking-wider">Smashed for the bold, built for the hungry. Dive into a legendary craft experience where every crispy edge and juicy layer rules.</p>
-    <button class="w-fit bg-redPrimary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full" onclick="smoothScrollTo('#s-order')">Order Now</button>
-    <div class="absolute right-[12%] bottom-[12%] w-24 sm:w-32 aspect-square z-10">
-      <img src="slid1.jpg" alt="" class="w-full h-full object-cover rounded-full border-4 border-cream shadow-xl">
-    </div>
-  </div>
-  <div class="relative min-h-[300px] md:min-h-[500px]">
-    <img src="burger3.jpeg" alt="" class="absolute inset-0 w-full h-full object-cover">
-    <div class="absolute inset-0 bg-gradient-to-r from-cream/30 to-transparent"></div>
-  </div>
-</section>
-
-<!-- ══════════════ SECTION 5: MENU GRID ══════════════ -->
-<section id="s-menu" class="relative px-6 md:px-12 py-24 bg-cream border-t border-dark/5">
-  <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-6">
-    <div>
-      <div class="text-[10px] uppercase font-bold tracking-widest text-redPrimary/80 mb-2">✦ From Grill to Table</div>
-      <h2 class="font-display text-4xl sm:text-6xl md:text-8xl text-redPrimary leading-none tracking-tight">OUR BURGERS<br>& PIZZAS</h2>
-    </div>
-  </div>
-
-  <div class="flex flex-wrap items-center gap-2 mb-10" id="menu-filters">
-    <button class="px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border border-redPrimary bg-redPrimary text-white shadow-md cursor-pointer filter-btn" onclick="filterMenu('all', this)">All Items</button>
-    <button class="px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border border-dark/15 text-dark hover:border-redPrimary hover:text-redPrimary cursor-pointer filter-btn" onclick="filterMenu('burger', this)">Burgers</button>
-    <button class="px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border border-dark/15 text-dark hover:border-redPrimary hover:text-redPrimary cursor-pointer filter-btn" onclick="filterMenu('pizza', this)">Pizza</button>
-    <button class="px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border border-dark/15 text-dark hover:border-redPrimary hover:text-redPrimary cursor-pointer filter-btn" onclick="filterMenu('sides', this)">Sides</button>
-    <button class="px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border border-dark/15 text-dark hover:border-redPrimary hover:text-redPrimary cursor-pointer filter-btn" onclick="filterMenu('drinks', this)">Drinks</button>
-  </div>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="menu-grid">
-    <!-- Dynamic menu item injection -->
-  </div>
-</section>
-
-<!-- ══════════════ SECTION 6: BUNDLES ══════════════ -->
-<section id="s-bundles" class="relative px-6 md:px-12 py-24 bg-cream border-t border-dark/5 overflow-hidden">
-  <div class="mb-14">
-    <h2 class="font-display text-5xl sm:text-7xl md:text-9xl text-dark leading-none tracking-tight">PERFECT BUNDLES</h2>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 select-none font-bold text-xs text-white">
-    <!-- Bundle 1 -->
-    <div class="bg-redPrimary rounded-3xl p-8 grid grid-cols-1 sm:grid-cols-12 gap-6 relative overflow-hidden shadow-xl hover:-translate-y-1 transition-all duration-300">
-      <div class="sm:col-span-8 flex flex-col justify-between h-full">
-        <div>
-          <span class="inline-block bg-dark/15 text-[8px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">✦ SOCIAL PACK ✦</span>
-          <h3 class="font-display text-4xl sm:text-5xl text-white tracking-widest leading-none">HUNGRY SOL</h3>
-          <span class="block text-[10px] opacity-65 mt-4 mb-1">Start From:</span>
-          <span class="font-display text-3xl text-yellow2">$37.9 USD</span>
-          <div class="h-px bg-white/20 my-5"></div>
-          <ul class="grid grid-cols-2 gap-2 text-[10px] uppercase opacity-90">
-            <li>✓ Classic Burger</li>
-            <li>✓ Golden Fries</li>
-            <li>✓ Soft Drink</li>
-            <li>✓ Cheese Dip</li>
-          </ul>
-        </div>
-        <button class="bg-white hover:bg-dark hover:text-white text-redPrimary text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-8 transition-colors cursor-pointer" onclick="addToCart('Social Pack Bundle')">Order Now →</button>
-      </div>
-      <div class="sm:col-span-4 w-28 h-28 sm:w-full sm:h-auto aspect-square rounded-full overflow-hidden self-center border-4 border-white/20 justify-self-center">
-        <img src="burger2.jpeg" alt="" class="w-full h-full object-cover">
-      </div>
-    </div>
-
-    <!-- Bundle 2 -->
-    <div class="bg-yellowPrimary rounded-3xl p-8 grid grid-cols-1 sm:grid-cols-12 gap-6 relative overflow-hidden shadow-xl hover:-translate-y-1 transition-all duration-300 text-dark">
-      <div class="sm:col-span-8 flex flex-col justify-between h-full">
-        <div>
-          <span class="inline-block bg-dark/10 text-[8px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">✦ CRUNCH PACK ✦</span>
-          <h3 class="font-display text-4xl sm:text-5xl text-dark tracking-widest leading-none">CHEESE LOVER</h3>
-          <span class="block text-[10px] opacity-65 mt-4 mb-1">Start From:</span>
-          <span class="font-display text-3xl text-redPrimary">$37.9 USD</span>
-          <div class="h-px bg-dark/10 my-5"></div>
-          <ul class="grid grid-cols-2 gap-2 text-[10px] uppercase opacity-90">
-            <li>✓ Double Cheese</li>
-            <li>✓ Seasoned Fries</li>
-            <li>✓ Soft Drink</li>
-            <li>✓ Melted Dip</li>
-          </ul>
-        </div>
-        <button class="bg-dark hover:bg-cream hover:text-dark text-yellowPrimary text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-8 transition-colors cursor-pointer" onclick="addToCart('Cheese Pack Bundle')">Order Now →</button>
-      </div>
-      <div class="sm:col-span-4 w-28 h-28 sm:w-full sm:h-auto aspect-square rounded-full overflow-hidden self-center border-4 border-dark/10 justify-self-center">
-        <img src="burger3.jpeg" alt="" class="w-full h-full object-cover">
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ SECTION 7: SPECIALS ══════════════ -->
-<section id="s-specials" class="relative py-24 bg-cream overflow-hidden">
-  <div class="px-6 md:px-12 flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-    <div>
-      <span class="text-[10px] uppercase font-bold tracking-widest text-redPrimary mb-2 block">✦ Limited Offer Specials</span>
-      <h2 class="font-display text-4xl sm:text-6xl md:text-8xl text-dark leading-none tracking-tight">CHEF'S SPECIALS</h2>
-    </div>
-  </div>
-
-  <div class="relative overflow-hidden w-full select-none mt-10">
-    <div class="flex w-[200%] animate-marquee">
-      <div class="flex shrink-0 gap-6" id="specials-track-1">
-        <!-- Dynamic specials loop -->
-      </div>
-      <div class="flex shrink-0 gap-6" id="specials-track-2">
-        <!-- Exact clone for loop -->
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ SECTION 8: ABOUT / STORY ══════════════ -->
-<section id="s-about" class="grid grid-cols-1 lg:grid-cols-2 bg-cream overflow-hidden">
-  <div class="px-6 md:px-16 py-24 flex flex-col justify-center" id="stats-section">
-    <span class="text-redPrimary font-bold text-xs uppercase tracking-widest mb-6 flex items-center gap-3"><span class="w-8 h-0.5 bg-redPrimary"></span> Our Story</span>
-    <h2 class="font-display text-5xl sm:text-7xl md:text-8xl text-dark leading-none tracking-tight">BORN ON THE<br><em class="not-italic text-redPrimary">GRILL.</em><br>RAISED ON<br><em class="not-italic text-redPrimary">FLAVOR.</em></h2>
-    <p class="text-dark/65 font-semibold text-xs sm:text-sm leading-relaxed max-w-[460px] my-8 uppercase tracking-wider">Billy Boyz started with one iron skillet, one insane recipe, and a dream that a great burger could change your whole day. One legendary burger at a time.</p>
-    <div class="grid grid-cols-3 gap-6 select-none font-bold text-xs">
-      <div>
-        <span class="font-display text-4xl sm:text-5xl text-redPrimary leading-none" id="stat-loc">12+</span>
-        <span class="block text-[9px] uppercase tracking-widest text-dark/40 mt-2">Locations</span>
-      </div>
-      <div>
-        <span class="font-display text-4xl sm:text-5xl text-redPrimary leading-none" id="stat-items">50+</span>
-        <span class="block text-[9px] uppercase tracking-widest text-dark/40 mt-2">Menu Items</span>
-      </div>
-      <div>
-        <span class="font-display text-4xl sm:text-5xl text-redPrimary leading-none" id="stat-happy">98%</span>
-        <span class="block text-[9px] uppercase tracking-widest text-dark/40 mt-2">Satisfaction</span>
-      </div>
-    </div>
-  </div>
-  <div class="relative min-h-[400px]">
-    <div class="absolute right-0 top-0 w-[65%] h-[65%] rounded-bl-3xl overflow-hidden shadow-lg border-b-2 border-l-2 border-cream">
-      <img src="burger3.jpeg" alt="" class="w-full h-full object-cover">
-    </div>
-    <div class="absolute left-6 bottom-10 w-[38%] h-[38%] rounded-2xl overflow-hidden border-4 border-cream shadow-2xl">
-      <img src="burger4.jpeg" alt="" class="w-full h-full object-cover">
-    </div>
-    <div class="absolute top-[40%] left-[50%] -translate-x-1/2 bg-yellowPrimary text-dark font-mono text-[9px] font-extrabold uppercase tracking-widest px-5 py-3 rounded-xl shadow-lg">Est. 2018 — Since Day One</div>
-  </div>
-</section>
-
-<!-- ══════════════ SECTION 9: REVIEWS ══════════════ -->
-<section id="s-reviews" class="relative px-6 md:px-12 py-24 bg-redPrimary overflow-hidden">
-  <span class="absolute font-display text-[40vw] text-black/5 -top-[12%] -left-[3%] leading-none select-none pointer-events-none">"</span>
-  <div class="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-8 z-10 relative">
-    <div>
-      <span class="text-white/50 text-[10px] uppercase tracking-widest font-bold block mb-2">✦ What They Say</span>
-      <h2 class="font-display text-5xl sm:text-7xl md:text-9xl text-white tracking-widest leading-none">REAL REVIEWS</h2>
-    </div>
-    <div class="text-white">
-      <span class="font-display text-5xl sm:text-6xl">4.9</span>
-      <div class="text-yellowPrimary text-sm tracking-widest mt-1">★★★★★</div>
-      <span class="block text-[8px] tracking-wider text-white/50 mt-1 uppercase font-bold">Based on 2,400+ reviews</span>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10 text-white font-bold text-xs leading-relaxed">
-    <div class="bg-black/15 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-      <div class="text-yellowPrimary mb-4">★★★★★</div>
-      <p class="font-normal italic text-white/90 text-sm mb-6">"Billy Boyz changed my life. The Double Trouble Burger is the single greatest thing humanity has ever produced. I drive 40 minutes just to eat here."</p>
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-dark/30 border border-yellowPrimary/45 overflow-hidden"><img src="reviewer1.jpeg" alt="" class="w-full h-full object-cover"></div>
-        <div>
-          <h4 class="text-xs font-black tracking-wider text-white">JAMES K.</h4>
-          <span class="block text-[9px] text-white/40 uppercase font-black">Miami, FL</span>
-        </div>
-      </div>
-    </div>
-    <div class="bg-black/15 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-      <div class="text-yellowPrimary mb-4">★★★★★</div>
-      <p class="font-normal italic text-white/90 text-sm mb-6">"Ordered the Cheese Pack for date night and my partner thought I cooked it myself. That's how good this is. The fries deserve a Michelin star."</p>
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-dark/30 border border-yellowPrimary/45 overflow-hidden"><img src="reviewer2.jpeg" alt="" class="w-full h-full object-cover"></div>
-        <div>
-          <h4 class="text-xs font-black tracking-wider text-white">SARAH M.</h4>
-          <span class="block text-[9px] text-white/40 uppercase font-black">Food Critic</span>
-        </div>
-      </div>
-    </div>
-    <div class="bg-black/15 border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-      <div class="text-yellowPrimary mb-4">★★★★★</div>
-      <p class="font-normal italic text-white/90 text-sm mb-6">"Came for a burger, stayed for the pizza. The BBQ Blast is criminally underrated. Billy Boyz just gets it — quality, speed, and that fire atmosphere."</p>
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full bg-dark/30 border border-yellowPrimary/45 overflow-hidden"><img src="reviewer3.jpeg" alt="" class="w-full h-full object-cover"></div>
-        <div>
-          <h4 class="text-xs font-black tracking-wider text-white">MARCUS T.</h4>
-          <span class="block text-[9px] text-white/40 uppercase font-black">Chef · LA</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════ SECTION 10: ORDER FORM ══════════════ -->
-<section id="s-order" class="relative px-6 md:px-12 py-24 bg-cream overflow-hidden">
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-    <div>
-      <span class="text-[10px] uppercase font-bold tracking-widest text-redPrimary block mb-2">✦ Skip The Queue</span>
-      <h2 class="font-display text-5xl sm:text-7xl text-dark leading-none tracking-tight">ORDER ONLINE</h2>
-      <p class="text-dark/65 font-semibold text-xs sm:text-sm mt-4 mb-8 uppercase tracking-wider">Hot, fresh, and delivered to your door in under 30 minutes. We prep every order to order — no shortcuts, no compromises.</p>
-      
-      <div class="flex flex-col gap-6 font-bold text-xs">
-        <div class="flex items-start gap-4">
-          <span class="font-display text-3xl text-redPrimary">01</span>
-          <div>
-            <h4 class="text-dark uppercase tracking-wider mb-1">Pick Your Items</h4>
-            <p class="text-dark/45">Browse the full menu — burgers, pizza, sides & drinks.</p>
-          </div>
-        </div>
-        <div class="flex items-start gap-4">
-          <span class="font-display text-3xl text-redPrimary">02</span>
-          <div>
-            <h4 class="text-dark uppercase tracking-wider mb-1">Customize It</h4>
-            <p class="text-dark/45">Choose extra cheese, toppings, and signature dipping sauces.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Interactive CSS Form Box -->
-    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-dark/5 shadow-2xl relative z-10 font-bold text-[10px] uppercase tracking-wider">
-      <h3 class="font-display text-2xl text-dark uppercase mb-1">Quick Checkout</h3>
-      <p class="text-[10px] text-dark/35 mb-6">Confirm and we will prepare it immediately.</p>
-      
-      <form id="checkoutForm" onsubmit="handleFormSubmit(event)" class="flex flex-col gap-4 text-dark/60">
-        <div>
-          <label class="block mb-2">Your Name</label>
-          <input type="text" required class="w-full bg-cream/40 border border-dark/10 rounded-xl p-3 text-xs outline-none focus:border-redPrimary" placeholder="Billy Smith">
-        </div>
-        <div>
-          <label class="block mb-2">Phone Number</label>
-          <input type="tel" required class="w-full bg-cream/40 border border-dark/10 rounded-xl p-3 text-xs outline-none focus:border-redPrimary" placeholder="+1 555 000 0000">
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block mb-2">Location</label>
-            <select class="w-full bg-cream/40 border border-dark/10 rounded-xl p-3 text-xs outline-none focus:border-redPrimary">
-              <option>Downtown</option>
-              <option>Westside</option>
-              <option>Northgate</option>
-            </select>
-          </div>
-          <div>
-            <label class="block mb-2">Selected Meal</label>
-            <select class="w-full bg-cream/40 border border-dark/10 rounded-xl p-3 text-xs outline-none focus:border-redPrimary">
-              <option>Double Trouble Burger</option>
-              <option>Mushroom Burger</option>
-              <option>BBQ Blast Pizza</option>
-            </select>
-          </div>
-        </div>
-        <button type="submit" id="submitBtn" class="w-full bg-redPrimary hover:bg-dark text-white font-heavy uppercase tracking-widest py-4.5 rounded-full mt-4 transition-all duration-300">Submit My Order</button>
-      </form>
-    </div>
-  </div>
-</section>
-
-<!-- ── FOOTER ── -->
-<footer class="bg-dark text-white py-16 px-6 md:px-12 border-t border-white/5">
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-    <div>
-      <a href="#" class="font-display text-2xl text-white mb-4 block">BILLY BOYZ</a>
-      <p class="text-white/40 text-xs leading-relaxed max-w-[260px]">Bigger. Juicier. Better. Feeding the city's hunger since 2018 — one legendary burger at a time.</p>
-    </div>
-    <div>
-      <h4 class="text-yellowPrimary font-mono uppercase tracking-widest text-[9px] mb-4">Menu</h4>
-      <ul class="flex flex-col gap-2.5 text-xs text-white/40 list-none font-bold">
-        <li><a href="#s-menu" class="hover:text-white transition-colors">Burgers</a></li>
-        <li><a href="#s-menu" class="hover:text-white transition-colors">Pizzas</a></li>
-        <li><a href="#s-menu" class="hover:text-white transition-colors">Bundles</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4 class="text-yellowPrimary font-mono uppercase tracking-widest text-[9px] mb-4">Company</h4>
-      <ul class="flex flex-col gap-2.5 text-xs text-white/40 list-none font-bold">
-        <li><a href="#s-about" class="hover:text-white transition-colors">Our Story</a></li>
-        <li><a href="#" class="hover:text-white transition-colors">Careers</a></li>
-      </ul>
-    </div>
-    <div>
-      <h4 class="text-yellowPrimary font-mono uppercase tracking-widest text-[9px] mb-4">Contact</h4>
-      <p class="text-white/40 text-xs font-bold">hello@billyboyz.com<br>+1 (800) BILLY-BZ</p>
-    </div>
-  </div>
-  <div class="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between text-[11px] text-white/30 font-bold">
-    <p>© 2026 Billy Boyz. All rights reserved.</p>
-    <p>Made with Love and Hot Sauce.</p>
-  </div>
-</footer>
-
-<!-- PROMO VIDEO MODAL -->
-<div id="videoModal" class="fixed inset-0 z-[99998] bg-black/90 backdrop-blur-md flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300">
-  <div class="w-[90vw] max-w-[800px] aspect-video bg-dark rounded-2xl overflow-hidden relative">
-    <video id="promoVideo" controls class="w-full h-full object-cover"><source src="promo.mp4" type="video/mp4"></video>
-    <button class="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/40 border border-white/20 text-white flex items-center justify-center cursor-pointer" onclick="closeVideoModal()">✕</button>
-  </div>
-</div>
-
-<script>
-// Menu rendering engine
-const MENU_ITEMS = [
-  { name: 'CLASSIC BURGER', desc: 'Smash patty, brioche bun, house sauce', price: '$16', category: 'burger', bun: 'BRIOCHE', patty: 'BEEF', spice: 'MILD', cal: '900', protein: '51g', img: 'burger1.jpeg' },
-  { name: 'SPICY JALAPEÑO', desc: 'Jalapeño, pepper jack, chipotle aioli', price: '$18', category: 'burger', bun: 'BRIOCHE', patty: 'BEEF', spice: 'HOT', cal: '950', protein: '53g', img: 'burger2.jpeg' },
-  { name: 'MUSHROOM BURGER', desc: 'Crispy mushroom, truffle aioli, sesame bun', price: '$10.99', category: 'burger', bun: 'SESAME', patty: 'BEEF', spice: 'MILD', cal: '870', protein: '47g', img: 'burger3.jpeg' },
-  { name: 'HAWAIIAN BURGER', desc: 'Pineapple glaze, teriyaki, sesame bun', price: '$12.29', category: 'burger', bun: 'SESAME', patty: 'BEEF', spice: 'MILD', cal: '920', protein: '50g', img: 'burger4.jpeg' },
-  { name: 'BBQ BLAST PIZZA', desc: 'Smoky BBQ base, pulled pork, jalapeño', price: '$14.99', category: 'pizza', bun: '—', patty: '—', spice: 'MED', cal: '1100', protein: '60g', img: 'burger5.jpeg' },
-  { name: 'PEPPERONI BEAST', desc: 'Triple pepperoni, mozzarella, chilli oil', price: '$13.49', category: 'pizza', bun: '—', patty: '—', spice: 'HOT', cal: '1050', protein: '58g', img: 'burger6.jpeg' },
-  { name: 'GOLDEN FRIES', desc: 'Sea salt, rosemary, truffle option', price: '$3.99', category: 'sides', bun: '—', patty: '—', spice: 'NONE', cal: '380', protein: '5g', img: 'burger7.jpeg' },
-  { name: 'FROSTED SHAKE', desc: 'Vanilla, chocolate or strawberry', price: '$4.49', category: 'drinks', bun: '—', patty: '—', spice: 'NONE', cal: '420', protein: '8g', img: 'slid1.jpg' },
-];
-
-function renderGrid(filter = 'all') {
-  const grid = document.getElementById('menu-grid');
-  const items = filter === 'all' ? MENU_ITEMS : MENU_ITEMS.filter(i => i.category === filter);
-  
-  grid.innerHTML = items.map(item => `
-    <div class="group bg-white rounded-2xl overflow-hidden border border-dark/5 shadow-md flex flex-col justify-between transition-all duration-300 relative">
-      <div class="relative overflow-hidden bg-cream/30 h-44 flex items-center justify-center p-4">
-        <img src="${item.img}" alt="${item.name}" class="w-[75%] h-full object-contain transform group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-500">
-        <button onclick="addToCart('${item.name}')" class="absolute top-3 right-3 bg-yellowPrimary text-dark font-black text-sm w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-md shadow-dark/10 hover:bg-redPrimary hover:text-white transition-all">+</button>
-      </div>
-      <div class="p-5 flex-1 flex flex-col justify-between font-bold text-xs uppercase tracking-wider">
-        <div>
-          <h4 class="font-display text-base text-redPrimary tracking-wide">${item.name}</h4>
-          <p class="text-[9px] text-dark/50 normal-case font-normal mt-1.5 leading-relaxed line-clamp-2">${item.desc}</p>
-        </div>
-        <div class="flex items-center justify-between mt-5 pt-3 border-t border-dark/5">
-          <span class="font-display text-lg text-dark">${item.price}</span>
-          <button onclick="addToCart('${item.name}')" class="bg-redPrimary hover:bg-dark text-white font-bold text-[9px] uppercase tracking-widest px-4 py-2 rounded-full cursor-pointer transition-colors duration-200">Add</button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-renderGrid();
-
-function filterMenu(cat, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.remove('bg-redPrimary', 'border-redPrimary', 'text-white', 'shadow-md');
-    b.classList.add('border-dark/15', 'text-dark');
-  });
-  btn.classList.add('bg-redPrimary', 'border-redPrimary', 'text-white', 'shadow-md');
-  btn.classList.remove('border-dark/15', 'text-dark');
-
-  // Fade animations
-  gsap.to('#menu-grid', { opacity: 0, y: 15, duration: 0.2, onComplete: () => {
-    renderGrid(cat);
-    gsap.to('#menu-grid', { opacity: 1, y: 0, duration: 0.4 });
-  }});
-}
-
-// Render Specials Loops
-const SPECIALS = [
-  { name: 'DOUBLE TROUBLE', price: '$7.99', tag: 'Burger', img: 'burger4.jpeg' },
-  { name: 'MUSHROOM BURGER', price: '$10.99', tag: 'Burger', img: 'slid3.jpg' },
-  { name: 'HAWAIIAN BURGER', price: '$12.29', tag: 'Burger', img: 'slid2.jpg' },
-  { name: 'VEGGIE DELIGHT', price: '$5.49', tag: 'Veggie', img: 'shake1.jpg' },
-  { name: 'BBQ BLAST PIZZA', price: '$14.99', tag: 'Pizza', img: 'slid1.jpg' },
-];
-
-function renderSpecials() {
-  const content = SPECIALS.map(spec => `
-    <div onclick="addToCart('${spec.name}')" class="w-56 bg-white rounded-2xl overflow-hidden border border-dark/5 p-4 flex flex-col gap-3 shrink-0 cursor-pointer shadow-md hover:scale-105 transition-all">
-      <div class="h-32 bg-cream/15 rounded-xl overflow-hidden flex items-center justify-center p-2">
-        <img src="${spec.img}" alt="${spec.name}" class="max-w-full max-h-full object-contain">
-      </div>
-      <div class="font-bold text-xs uppercase tracking-wider">
-        <span class="block text-[8px] uppercase tracking-widest font-black text-redPrimary">${spec.tag}</span>
-        <h4 class="font-display text-xs text-dark mt-1 tracking-tight line-clamp-1">${spec.name}</h4>
-        <p class="font-display text-sm text-redPrimary mt-2">${spec.price} <span class="font-sans text-[8px] text-dark/45 font-bold">/item</span></p>
-      </div>
-    </div>
-  `).join('');
-  document.getElementById('specials-track-1').innerHTML = content;
-  document.getElementById('specials-track-2').innerHTML = content;
-}
-renderSpecials();
-
-// Interactive Actions System
-let cartCount = 0;
-function addToCart(itemName) {
-  cartCount++;
-  document.getElementById('cartCount').textContent = cartCount;
-  
-  // Animate basket
-  gsap.fromTo('.floating-cart', { scale: 1.3 }, { scale: 1, duration: 0.4, ease: 'back.out(1.7)' });
-  
-  // Show toast feedback
-  const toast = document.getElementById('toast');
-  document.getElementById('toastName').textContent = itemName;
-  toast.style.opacity = '1';
-  toast.style.transform = 'translateY(0)';
-  
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(20px)';
-  }, 2200);
-}
-
-// Drawer system
-function toggleDrawer() {
-  const drawer = document.getElementById('navDrawer');
-  const open = drawer.style.opacity === '1';
-  drawer.style.opacity = open ? '0' : '1';
-  drawer.style.pointerEvents = open ? 'none' : 'auto';
-}
-
-function smoothScrollTo(target) {
-  const el = document.querySelector(target);
-  if (el) gsap.to(window, { duration: 1.2, scrollTo: { y: el }, ease: 'power3.inOut' });
-}
-
-// Video modaling
-function openVideoModal() {
-  const modal = document.getElementById('videoModal');
-  modal.style.opacity = '1';
-  modal.style.pointerEvents = 'auto';
-  document.getElementById('promoVideo').play();
-}
-function closeVideoModal() {
-  const modal = document.getElementById('videoModal');
-  modal.style.opacity = '0';
-  modal.style.pointerEvents = 'none';
-  const vid = document.getElementById('promoVideo');
-  vid.pause(); vid.currentTime = 0;
-}
-
-// Form logic
-function handleFormSubmit(e) {
-  e.preventDefault();
-  const btn = document.getElementById('submitBtn');
-  btn.textContent = 'Order Placed! Calling you now...';
-  btn.style.background = '#22c55e';
-}
-
-// WebGL high-fidelity chroma key processing logic
-(function initWebGLRenderer() {
-  const vid = document.getElementById('heroVid');
-  const canvas = document.getElementById('heroBurgerCanvas');
-  if (!vid || !canvas) return;
-
-  const gl = canvas.getContext('webgl', { alpha: true, antialias: true, premultipliedAlpha: false });
-  if (!gl) {
-    canvas.style.mixBlendMode = 'color-dodge'; // Fallback
-    return;
-  }
-
-  // Shader components (Y-flipped quad)
-  const vsSource = `
-    attribute vec2 position;
-    varying vec2 vTexCoord;
-    void main() {
-      vTexCoord = vec2(position.x * 0.5 + 0.5, 0.5 - position.y * 0.5);
-      gl_Position = vec4(position, 0.0, 1.0);
-    }
-  `;
-
-  // Enhanced Black removal & saturation upscaler
-  const fsSource = `
-    precision mediump float;
-    varying vec2 vTexCoord;
-    uniform sampler2D uTexture;
+    </script>
     
-    void main() {
-      vec4 color = texture2D(uTexture, vTexCoord);
-      float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+    <!-- GSAP for Smooth scroll animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+      /* Custom Ticker loop animations */
+      @keyframes tickerGo {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-ticker {
+        animation: tickerGo 25s linear infinite;
+      }
+      @keyframes marqueeGo {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-marquee {
+        animation: marqueeGo 35s linear infinite;
+      }
       
-      float maxVal = max(color.r, max(color.g, color.b));
-      float minVal = min(color.r, min(color.g, color.b));
-      float chroma = maxVal - minVal;
+      /* WebGL Video / Image high-rendering sharpness */
+      .img-upscale {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        filter: contrast(1.06) saturate(1.12) brightness(1.02);
+      }
+      
+      /* Premium Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #F0E6D3;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #D91212;
+        border-radius: 5px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #AA0A0A;
+      }
+    </style>
+  </head>
+  <body class="bg-cream text-dark font-sans overflow-x-hidden">
 
-      // Threshold calculations to separate matte details from perfect black backgrounds
-      float alpha = smoothstep(0.05, 0.13, maxVal);
-      float chromaProtect = smoothstep(0.015, 0.05, chroma);
-      alpha = max(alpha, chromaProtect);
+    <!-- PAGE LOADER Overlay -->
+    <div id="page-loader" class="fixed inset-0 z-[999] bg-dark flex flex-col items-center justify-center transition-all duration-700 ease-out">
+      <div class="relative flex flex-col items-center">
+        <h1 class="font-display text-4xl sm:text-6xl text-red-primary tracking-wider animate-bounce select-none">BILLY BOYZ</h1>
+        <div class="w-48 h-1 bg-white/10 rounded-full mt-6 overflow-hidden relative">
+          <div class="absolute inset-y-0 left-0 bg-yellow-primary w-2/3 rounded-full animate-pulse"></div>
+        </div>
+        <p class="text-white/40 font-mono text-[9px] uppercase tracking-widest mt-3 animate-pulse">Initializing GPU Sharpener...</p>
+      </div>
+    </div>
 
-      // Edge fading
-      float edgeX = smoothstep(0.0, 0.03, vTexCoord.x) * smoothstep(1.0, 0.97, vTexCoord.x);
-      float edgeY = smoothstep(0.0, 0.02, vTexCoord.y) * smoothstep(1.0, 0.98, vTexCoord.y);
-      alpha *= (edgeX * edgeY);
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[100] transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300">
+      <div class="bg-dark text-white font-mono text-[10px] font-bold uppercase tracking-widest px-6 py-4 rounded-full shadow-2xl border border-white/10 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-yellow-primary animate-ping"></span>
+        <span id="toast-text">ADDED TO CART</span>
+      </div>
+    </div>
 
-      vec3 rgb = color.rgb;
-      if (alpha > 0.01) {
-        rgb = rgb / max(alpha, 0.45);
+    <!-- HEADER / NAVIGATION --->
+    <header id="nav-header" class="fixed top-0 inset-x-0 z-[50] transition-all duration-300 py-6 px-6 md:px-12">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <!-- Logo -->
+        <a href="#s-hero" class="flex items-center gap-2.5 group">
+          <span class="font-display text-xl sm:text-2xl text-red-primary leading-none tracking-widest transition-transform group-hover:scale-105">BILLY BOYZ</span>
+        </a>
+
+        <!-- Desktop Menu Links -->
+        <nav class="hidden md:flex items-center gap-8">
+          <a href="#s-menu" class="font-bold text-[11px] uppercase tracking-widest text-[#1a0a00]/70 hover:text-red-primary transition-colors">Menu</a>
+          <a href="#s-bundles" class="font-bold text-[11px] uppercase tracking-widest text-[#1a0a00]/70 hover:text-red-primary transition-colors">Bundles</a>
+          <a href="#s-order" class="font-bold text-[11px] uppercase tracking-widest text-[#1a0a00]/70 hover:text-red-primary transition-colors">Book Table</a>
+        </nav>
+
+        <!-- Right Controls -->
+        <div class="flex items-center gap-4">
+          <!-- Cart Button -->
+          <button id="cart-trigger" class="relative bg-white border border-dark/10 hover:border-red-primary text-dark p-3.5 rounded-full transition-all flex items-center justify-center">
+            <i data-lucide="shopping-bag" class="w-4.5 h-4.5"></i>
+            <span id="cart-count-badge" class="absolute -top-1.5 -right-1.5 bg-red-primary text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white scale-0 transition-transform">0</span>
+          </button>
+
+          <!-- Hamburger on mobile -->
+          <button id="mobile-menu-trigger" class="md:hidden bg-white border border-dark/10 text-dark p-3.5 rounded-full transition-all">
+            <i data-lucide="menu" class="w-4.5 h-4.5"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MOBILE DRAWER MENU -->
+    <div id="mobile-drawer" class="fixed inset-0 z-[100] bg-dark/50 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+      <div class="absolute right-0 top-0 bottom-0 w-4/5 max-w-[320px] bg-cream p-8 shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300">
+        <div>
+          <div class="flex justify-between items-center mb-10">
+            <span class="font-display text-lg text-red-primary tracking-widest">BILLY BOYZ</span>
+            <button id="mobile-drawer-close" class="p-2 border border-dark/5 rounded-full">
+              <i data-lucide="x" class="w-4.5 h-4.5 text-dark"></i>
+            </button>
+          </div>
+          <nav class="flex flex-col gap-6">
+            <a href="#s-menu" class="mobile-nav-link font-display text-2xl text-red-primary tracking-wide hover:translate-x-2 transition-transform">MENU</a>
+            <a href="#s-bundles" class="mobile-nav-link font-display text-2xl text-red-primary tracking-wide hover:translate-x-2 transition-transform">BUNDLES</a>
+            <a href="#s-order" class="mobile-nav-link font-display text-2xl text-red-primary tracking-wide hover:translate-x-2 transition-transform">ORDER</a>
+          </nav>
+        </div>
+        <div>
+          <p class="font-mono text-[9px] uppercase tracking-wider text-dark/40">SINCE 2018</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHOPPING CART SLIDE OVERLAY -->
+    <div id="cart-drawer" class="fixed inset-0 z-[110] bg-dark/50 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+      <div class="absolute right-0 top-0 bottom-0 w-full sm:w-4/5 sm:max-w-[400px] bg-white p-8 shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300">
+        <div>
+          <div class="flex justify-between items-center mb-8 pb-4 border-b border-dark/5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="shopping-bag" class="w-5 h-5 text-red-primary"></i>
+              <span class="font-display text-base text-red-primary tracking-wide">CART SUMMARY</span>
+            </div>
+            <button id="cart-drawer-close" class="p-2 border border-dark/5 rounded-full hover:bg-dark/5 transition-colors">
+              <i data-lucide="x" class="w-4.5 h-4.5 text-dark"></i>
+            </button>
+          </div>
+          
+          <div id="cart-items-list" class="flex flex-col gap-4 overflow-y-auto max-h-[50vh] pr-2">
+            <!-- Dynamic Cart Items Rendered Here -->
+            <p id="empty-cart-message" class="text-xs uppercase font-bold tracking-widest text-dark/45 text-center mt-12">CART IS EMPTY</p>
+          </div>
+        </div>
+
+        <div class="border-t border-dark/5 pt-6">
+          <div class="flex justify-between items-center mb-6">
+            <span class="font-display text-sm tracking-widest text-dark/50 uppercase">Subtotal:</span>
+            <span id="cart-subtotal" class="font-display text-2xl text-red-primary">$0.00</span>
+          </div>
+          <button id="cart-checkout-btn" class="w-full bg-red-primary hover:bg-dark text-white font-black text-xs uppercase tracking-widest py-4 rounded-full transition-all">CHECKOUT ORDER</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <section id="s-hero" class="relative min-h-screen bg-cream flex flex-col justify-center items-center px-6 md:px-12 py-24 overflow-hidden">
+      <!-- "THE BURGER" Banner behind canvas burger -->
+      <h1 class="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center font-display text-[15vw] md:text-[18vw] leading-none text-red-primary select-none z-[11] tracking-tight whitespace-nowrap overflow-hidden">
+        THE BURGER
+      </h1>
+
+      <!-- High Fidelity WebGL Canvas container -->
+      <div class="relative w-full max-w-[320px] sm:max-w-[480px] md:max-w-[700px] aspect-square z-[12] pointer-events-none mt-10 md:mt-0 transition-transform duration-500 hover:scale-105">
+        <div class="relative w-full h-full flex items-center justify-center">
+          <video
+            id="hero-video-ref"
+            src="https://lifeseemsendless.github.io/burger/burgerexp.mp4"
+            autoplay
+            muted
+            playsinline
+            preload="auto"
+            loop
+            class="absolute pointer-events-none opacity-0 w-1 h-1"
+            crossorigin="anonymous"
+          ></video>
+          <canvas
+            id="chroma-canvas"
+            class="w-full h-full mix-blend-normal transform"
+            style="display: block; max-width: 100%; height: auto; background: transparent;"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Decorative badges -->
+      <div class="absolute top-[20%] left-[8%] z-[13] rotate-[-8deg] bg-red-primary text-white font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
+        SMASHED FRESH
+      </div>
+      <div class="absolute bottom-[24%] right-[8%] z-[13] rotate-[6deg] bg-yellow-primary text-dark font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
+        BOLD FLAVOR
+      </div>
+
+      <!-- Hero descriptions -->
+      <div class="absolute left-10 md:left-14 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-left">
+        <p class="text-dark/75 font-semibold text-xs leading-relaxed uppercase tracking-wider">
+          Smashed hot on the flat top, our prime patties lock in ultimate juiciness under a caramelized crust.
+        </p>
+      </div>
+      <div class="absolute right-10 md:right-14 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-right">
+        <p class="text-dark/75 font-bold text-xs leading-relaxed uppercase tracking-wider">
+          Topped with melted cheddar and our signature sauce crafted to satisfy your cravings since 2018.
+        </p>
+      </div>
+
+      <!-- CTA buttons -->
+      <div class="flex flex-col sm:flex-row items-center gap-4 z-[13] mt-8 w-full sm:w-auto px-6">
+        <a href="#s-menu" class="w-full sm:w-auto text-center bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-9 py-4.5 rounded-full shadow-lg transition-all">Explore Menu</a>
+        <button id="play-video-story" class="w-full sm:w-auto border-2 border-dark hover:bg-dark hover:text-white text-dark font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-full transition-all flex items-center justify-center gap-2">
+          <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>Watch Our Story
+        </button>
+      </div>
+    </section>
+
+    <!-- TICKER BAND -->
+    <div class="relative bg-red-primary py-4.5 border-y-2 border-dark/10 overflow-hidden w-full select-none">
+      <div class="flex w-[200%] animate-ticker whitespace-nowrap">
+        <!-- Repeat content to allow smooth looping -->
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger1.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">DOUBLE TROUBLE BURGER</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
+        </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger2.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CHEESE STACK PIZZA</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
+        </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CRUNCH PACK $37.9</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
+        </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger4.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">HAWAIIAN BURGER</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
+        </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger5.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">FREE DELIVERY TODAY</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
+        </div>
+        <!-- Duplicate set -->
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger1.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">DOUBLE TROUBLE BURGER</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
+        </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger2.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CHEESE STACK PIZZA</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
+        </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CRUNCH PACK $37.9</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRODUCT DETAIL HIGHLIGHTS -->
+    <section id="s-product" class="relative flex flex-col items-center justify-center text-center px-6 md:px-12 py-24 bg-cream overflow-hidden">
+      <div class="mb-6 flex flex-col items-center gap-3">
+        <div class="w-16 h-16 rounded-full bg-yellow-primary border-2 border-dark flex items-center justify-center p-1.5 shadow-md">
+          <img src="https://lifeseemsendless.github.io/burger/logo.jpeg" alt="" class="w-full h-full object-cover rounded-full img-upscale" />
+        </div>
+        <span class="font-sub text-[10px] tracking-widest text-dark/50 uppercase">Top Classic</span>
+      </div>
+      <h2 class="font-display text-4xl sm:text-6xl md:text-8xl text-red-primary leading-tight tracking-tight max-w-[980px]">
+        JUICY CHEESY<br />FULLY LOADED
+      </h2>
+      <p class="font-sans text-dark/75 font-semibold text-xs sm:text-sm leading-relaxed max-w-[580px] mt-6 uppercase tracking-wider">
+        Billy Boyz is back and bolder than ever. Honouring our rich roots, we bring you the ultimate smashed experience — fully loaded, hot, and crafted fresh.
+      </p>
+      <a href="#s-menu" class="bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full mt-9 transition-colors">Order Now</a>
+    </section>
+
+    <!-- TRAVEL SECTION -->
+    <section id="s-travel" class="bg-yellow-primary relative flex flex-col lg:flex-row lg:items-center justify-between px-6 md:px-16 py-24 gap-12 overflow-hidden">
+      <div class="max-w-[700px] z-[2]">
+        <h2 class="font-display text-5xl sm:text-7xl md:text-9xl text-white tracking-widest leading-[0.88] drop-shadow-md">
+          QUALITY THAT<br />TRAVELS WITH YOU
+        </h2>
+      </div>
+      <div class="max-w-[360px] flex flex-col gap-5 z-[2]">
+        <p class="text-dark/85 font-semibold text-xs sm:text-sm leading-relaxed uppercase tracking-wider">
+          Freshly packed smash burgers, ready to go wherever you crave. From our flat-top to any corner of the city, we ensure every layer stays hot and juicy.
+        </p>
+        <a href="#s-menu" class="w-fit bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full transition-colors">Explore Menu</a>
+      </div>
+
+      <!-- Travel Photo Rotation Grid with Upscaled Quality images -->
+      <div class="flex gap-4 self-center lg:self-auto mt-6 lg:mt-0 z-[2]">
+        <div class="relative w-36 h-28 sm:w-44 sm:h-36 rounded-2xl overflow-hidden border-4 border-white shadow-xl rotate-[-4deg]">
+          <img src="https://lifeseemsendless.github.io/burger/burger4.jpeg" alt="" class="w-full h-full object-cover img-upscale" />
+          <span class="absolute top-2 left-1/2 -translate-x-1/2 bg-red-primary text-white font-display text-[9px] px-3 py-1 rounded">
+            Downtown
+          </span>
+        </div>
+        <div class="relative w-36 h-28 sm:w-44 sm:h-36 rounded-2xl overflow-hidden border-4 border-white shadow-xl rotate-[4deg] mt-6">
+          <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="" class="w-full h-full object-cover img-upscale" />
+          <span class="absolute top-2 left-1/2 -translate-x-1/2 bg-red-primary text-white font-display text-[9px] px-3 py-1 rounded">
+            Westside
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEEL THE CHANGE SPLIT SPLASH -->
+    <section id="s-change" class="grid grid-cols-1 md:grid-cols-2 bg-cream overflow-hidden">
+      <div class="relative flex flex-col justify-center px-6 sm:px-12 md:px-16 py-20">
+        <h2 class="font-display text-5xl sm:text-7xl md:text-8xl text-red-primary leading-none tracking-tight">
+          FEEL THE<br />CHANGE
+        </h2>
+        <p class="text-dark/75 font-semibold text-xs sm:text-sm leading-relaxed max-w-[360px] mt-6 mb-8 uppercase tracking-wider">
+          Smashed for the bold, built for the hungry. Dive into a legendary craft experience where every crispy edge and juicy layer rules.
+        </p>
+        <a href="#s-order" class="w-fit bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full transition-all">Order Now</a>
+
+        <!-- Floating sticker -->
+        <div class="absolute right-[12%] bottom-[12%] w-24 sm:w-32 aspect-square z-10">
+          <img src="https://lifeseemsendless.github.io/burger/slid1.jpg" alt="" class="w-full h-full object-cover rounded-full border-4 border-cream shadow-xl hover:scale-105 transition-transform img-upscale" />
+        </div>
+      </div>
+
+      <!-- Left High Contrast Splited Image View Box -->
+      <div class="relative min-h-[300px] md:min-h-[500px]">
+        <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="Billy Boyz" class="absolute inset-0 w-full h-full object-cover img-upscale" />
+        <div class="absolute inset-0 bg-gradient-to-r from-cream/30 to-transparent" />
+      </div>
+    </section>
+
+    <!-- INTERACTIVE FILTERABLE MENU SELECTOR GRID -->
+    <section id="s-menu" class="relative px-6 md:px-12 py-24 bg-cream border-t border-dark/5">
+      <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-6">
+        <div>
+          <div class="text-[10px] uppercase font-bold tracking-widest text-red-primary/80 mb-2">✦ From Grill to Table</div>
+          <h2 class="font-display text-4xl sm:text-6xl md:text-8xl text-red-primary leading-none tracking-tight">
+            OUR FINEST<br />BURGER PICKS
+          </h2>
+        </div>
+        <div class="text-right">
+          <span class="font-mono text-xs uppercase tracking-widest text-dark/45 font-bold mr-2">
+            8 ITEMS MATCHED ☰
+          </span>
+        </div>
+      </div>
+
+      <!-- Tab Categories Selection list -->
+      <div class="flex flex-wrap items-center gap-2 mb-10">
+        <button onclick="filterCategory('all')" id="tab-all" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer bg-red-primary border-red-primary text-white shadow-md">All Items</button>
+        <button onclick="filterCategory('burger')" id="tab-burger" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary">Burgers</button>
+        <button onclick="filterCategory('pizza')" id="tab-pizza" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary">Pizza</button>
+        <button onclick="filterCategory('sides')" id="tab-sides" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary">Sides</button>
+        <button onclick="filterCategory('drinks')" id="tab-drinks" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary">Drinks</button>
+      </div>
+
+      <!-- Product Items Cards Container (JS-interlocked data items) -->
+      <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 select-none">
+        <!-- JS mounts standard product cards here dynamically to ensure perfect filter flow -->
+      </div>
+    </section>
+
+    <!-- PERFECT MEAL BUNDLES -->
+    <section id="s-bundles" class="relative px-6 md:px-12 py-24 bg-cream border-t border-dark/5 overflow-hidden">
+      <div class="mb-14">
+        <h2 class="font-display text-5xl sm:text-7xl md:text-9xl text-dark leading-none tracking-tight">
+          PERFECT MEAL BUNDLES
+        </h2>
+        <p class="text-dark/70 font-semibold text-xs sm:text-sm leading-relaxed max-w-[440px] mt-4 uppercase tracking-wider">
+          Curated packs built for every craving — solo missions, date nights, and full-squad feasts. Made fresh, every time.
+        </p>
+      </div>
+
+      <!-- Bundle cards layout with upscale crisp pictures -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 select-none font-bold text-xs">
+        
+        <!-- Social Pack -->
+        <div class="bg-red-primary rounded-3xl p-8 text-white grid grid-cols-1 sm:grid-cols-12 gap-6 relative overflow-hidden shadow-xl hover:-translate-y-1.5 transition-all duration-300 group">
+          <div class="sm:col-span-8 flex flex-col justify-between h-full">
+            <div>
+              <span class="inline-block bg-dark/15 text-[9px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">
+                ✦ SOCIAL PACK ✦
+              </span>
+              <h3 class="font-display text-4xl sm:text-5xl text-white tracking-widest leading-none">HUNGRY</h3>
+              <span class="block text-[10px] opacity-60 uppercase mt-4 mb-1">Start From:</span>
+              <span class="font-display text-3xl text-yellow2">$37.9 USD</span>
+              <div class="h-px bg-white/20 my-5"></div>
+              <span class="block text-[9px] tracking-widest opacity-60 uppercase mb-3">INCLUDE:</span>
+              <ul class="grid grid-cols-2 gap-2 list-none text-[10px] opacity-90 uppercase">
+                <li>✓ Classic Burger</li>
+                <li>✓ Golden Fries</li>
+                <li>✓ Soft Drink</li>
+                <li>✓ Cheese Dip</li>
+                <li>✓ Onion Rings</li>
+                <li>✓ Sauce Set</li>
+              </ul>
+            </div>
+            <button onclick="addToCartRaw('HUNGRY PACK', 37.9)" class="bg-white hover:bg-dark hover:text-white text-red-primary text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-8 transition-colors">
+              Order Now →
+            </button>
+          </div>
+          <div class="sm:col-span-4 w-28 h-28 sm:w-full sm:h-auto aspect-square rounded-full overflow-hidden self-center border-4 border-white/20 shadow-lg justify-self-center">
+            <img src="https://lifeseemsendless.github.io/burger/burger2.jpeg" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 img-upscale" />
+          </div>
+        </div>
+
+        <!-- Cheese Pack -->
+        <div class="bg-yellow-primary rounded-3xl p-8 text-dark grid grid-cols-1 sm:grid-cols-12 gap-6 relative overflow-hidden shadow-xl hover:-translate-y-1.5 transition-all duration-300 group">
+          <div class="sm:col-span-8 flex flex-col justify-between h-full">
+            <div>
+              <span class="inline-block bg-dark/10 text-[9px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">
+                ✦ CRUNCH PACK ✦
+              </span>
+              <h3 class="font-display text-4xl sm:text-5xl text-dark tracking-widest leading-none">CHEESE PACK</h3>
+              <span class="block text-[10px] opacity-65 uppercase mt-4 mb-1">Start From:</span>
+              <span class="font-display text-3xl text-red-primary">$37.9 USD</span>
+              <div class="h-px bg-dark/10 my-5"></div>
+              <span class="block text-[9px] tracking-widest opacity-65 uppercase mb-3">INCLUDE:</span>
+              <ul class="grid grid-cols-2 gap-2 list-none text-[10px] opacity-90 uppercase">
+                <li>✓ Extra Cheese Burger</li>
+                <li>✓ Golden Fries</li>
+                <li>✓ Regular Fries</li>
+                <li>✓ Free Soft Drink</li>
+                <li>✓ Soft Drink</li>
+                <li>✓ Cheese Dip</li>
+              </ul>
+            </div>
+            <button onclick="addToCartRaw('CHEESE PACK', 37.9)" class="bg-dark hover:bg-cream hover:text-dark text-yellow-primary text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-8 transition-colors">
+              Order Now →
+            </button>
+          </div>
+          <div class="sm:col-span-4 w-28 h-28 sm:w-full sm:h-auto aspect-square rounded-full overflow-hidden self-center border-4 border-dark/10 shadow-lg justify-self-center">
+            <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 img-upscale" />
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- LIVE CONVERSATIONAL ORDER & TABLE BOOKING FORM -->
+    <section id="s-order" class="relative bg-cream py-24 border-t border-dark/10 px-6 sm:px-12">
+      <div class="max-w-4xl mx-auto bg-dark p-8 sm:p-14 rounded-[32px] text-white relative overflow-hidden shadow-2xl">
+        <div class="relative z-[2]">
+          <span class="bg-white/10 px-4 py-1.5 rounded-full font-mono text-[9px] font-semibold uppercase tracking-widest">
+            ✦ BOOK YOUR EXPERIENCE ✦
+          </span>
+          <h2 class="font-display text-4xl sm:text-6xl text-yellow-primary tracking-widest leading-none mt-5 mb-10">
+            SECURE A TABLE
+          </h2>
+          
+          <form id="booking-form" onsubmit="submitForm(event)" class="flex flex-col gap-8 max-w-[580px]">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div class="flex flex-col gap-2">
+                <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Full Name</label>
+                <input required id="f-name" type="text" placeholder="John Doe" class="bg-transparent border-b border-white/20 focus:border-yellow-primary text-sm font-semibold tracking-wide uppercase py-2 outline-none transition-colors text-white" />
+              </div>
+              <div class="flex flex-col gap-2">
+                <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Phone Number</label>
+                <input required id="f-phone" type="tel" placeholder="+1 123 456 78" class="bg-transparent border-b border-white/20 focus:border-yellow-primary text-sm font-semibold tracking-wide uppercase py-2 outline-none transition-colors text-white" />
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div class="flex flex-col gap-2">
+                <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Select Location</label>
+                <select id="f-loc" class="bg-dark/50 border-b border-white/20 focus:border-yellow-primary text-xs font-semibold tracking-wide uppercase py-2 outline-none transition-all text-white">
+                  <option value="Downtown">Downtown Branch</option>
+                  <option value="Westside">Westside Branch</option>
+                  <option value="Uptown">Uptown Diner</option>
+                </select>
+              </div>
+              <div class="flex flex-col gap-2">
+                <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Your Preferred Burger</label>
+                <select id="f-meal" class="bg-dark/50 border-b border-white/20 focus:border-yellow-primary text-xs font-semibold tracking-wide uppercase py-2 outline-none transition-all text-white">
+                  <option value="Double Trouble Burger">Double Trouble Burger</option>
+                  <option value="Spicy Jalapeño Stuff">Spicy Jalapeño Burger</option>
+                  <option value="Mushroom Smasher">Mushroom Smasher</option>
+                  <option value="Hawaiian Pine Feast">Hawaiian Pine Feast</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Special Requirements (Optional)</label>
+              <textarea id="f-notes" placeholder="Extra cheese, dietary constraints, gluten-free buns..." class="bg-transparent border-b border-white/20 focus:border-yellow-primary text-xs font-semibold uppercase py-2 outline-none min-h-[60px] max-h-[140px] transition-all text-white"></textarea>
+            </div>
+            
+            <button type="submit" class="w-full bg-yellow-primary hover:bg-white text-dark hover:scale-[1.01] font-black text-xs uppercase tracking-widest py-4.5 rounded-full mt-6 shadow-xl transition-all">
+              Confirm Table Booking
+            </button>
+          </form>
+          
+          <div id="booking-success" class="hidden flex-col items-center justify-center py-10 transition-all duration-500">
+            <i data-lucide="utensils-crossed" class="w-12 h-12 text-yellow-primary animate-bounce mb-4"></i>
+            <h3 class="font-display text-2xl text-yellow-primary tracking-wider uppercase">BOOKING CONFIRMED</h3>
+            <p id="success-preview-text" class="text-xs uppercase font-sub font-normal text-white/80 mt-2 text-center max-w-[380px]">Your spot is locked at Billy Boyz.</p>
+            <button onclick="resetBookingForm()" class="bg-white/10 hover:bg-white/20 text-white font-mono text-[9px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full mt-8 transition-colors">Book Another Table</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER --->
+    <footer class="bg-dark text-white py-14 px-6 md:px-12 border-t border-white/5">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <span class="font-display text-xl text-red-primary tracking-widest">BILLY BOYZ</span>
+        <p class="font-mono text-[9px] tracking-widest uppercase text-white/40">© 2026 Billy Boyz Smashed Burgers Corp.</p>
+      </div>
+    </footer>
+
+    <!-- INTERACTIVE MOUNTS & WEBGL PIPELINING CORE -->
+    <script>
+      // PRODUCT MENU ITEMS DATA
+      const MENU_ITEMS = [
+        { name: 'CLASSIC BURGER', desc: 'Smash patty, brioche bun, house sauce', price: '$16.00', numPrice: 16.00, category: 'burger', bun: 'BRIOCHE', patty: 'BEEF', spice: 'MILD', protein: '51g', img: 'burger1.jpeg' },
+        { name: 'SPICY JALAPEÑO', desc: 'Jalapeño, pepper jack, chipotle aioli', price: '$18.00', numPrice: 18.00, category: 'burger', bun: 'BRIOCHE', patty: 'BEEF', spice: 'HOT', protein: '53g', img: 'burger2.jpeg' },
+        { name: 'MUSHROOM BURGER', desc: 'Crispy mushroom, truffle aioli, sesame bun', price: '$10.99', numPrice: 10.99, category: 'burger', bun: 'SESAME', patty: 'BEEF', spice: 'MILD', protein: '47g', img: 'burger3.jpeg' },
+        { name: 'HAWAIIAN BURGER', desc: 'Pineapple glaze, teriyaki, sesame bun', price: '$12.29', numPrice: 12.29, category: 'burger', bun: 'SESAME', patty: 'BEEF', spice: 'MILD', protein: '50g', img: 'burger4.jpeg' },
+        { name: 'BBQ BLAST PIZZA', desc: 'Smoky BBQ base, pulled pork, jalapeño', price: '$14.99', numPrice: 14.99, category: 'pizza', bun: '—', patty: '—', spice: 'MED', protein: '60g', img: 'burger5.jpeg' },
+        { name: 'PEPPERONI BEAST', desc: 'Triple pepperoni, mozzarella, chilli oil', price: '$13.49', numPrice: 13.49, category: 'pizza', bun: '—', patty: '—', spice: 'HOT', protein: '58g', img: 'burger6.jpeg' },
+        { name: 'GOLDEN FRIES', desc: 'Sea salt, rosemary, truffle option', price: '$3.99', numPrice: 3.99, category: 'sides', bun: '—', patty: '—', spice: 'NONE', protein: '5g', img: 'burger7.jpeg' },
+        { name: 'FROSTED SHAKE', desc: 'Vanilla, chocolate or strawberry', price: '$4.49', numPrice: 4.49, category: 'drinks', bun: '—', patty: '—', spice: 'NONE', protein: '8g', img: 'slid1.jpg' }
+      ];
+
+      let CART = [];
+
+      // INITIALIZE LUCIDE ICONS
+      window.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        renderMenuCards('all');
+        setupPageLoader();
+        setupWebGLChroma();
+        setupEventListeners();
+      });
+
+      // PAGE LOADER TIMING
+      function setupPageLoader() {
+        setTimeout(() => {
+          const loader = document.getElementById('page-loader');
+          loader.style.opacity = '0';
+          loader.style.pointerEvents = 'none';
+        }, 1100);
       }
 
-      // 1.18 Color booster
-      float targetLuma = dot(rgb, vec3(0.299, 0.587, 0.114));
-      vec3 boosted = mix(vec3(targetLuma), rgb, 1.18);
-      
-      // Contrast boost
-      boosted = (boosted - 0.5) * 1.05 + 0.5;
+      // NAV VISUAL SCROLL FEEDBACK
+      window.addEventListener('scroll', () => {
+        const header = document.getElementById('nav-header');
+        if (window.scrollY > 50) {
+          header.classList.add('bg-cream/95', 'backdrop-blur-md', 'shadow-md', 'py-4.5 border-b border-dark/5');
+          header.classList.remove('py-6');
+        } else {
+          header.classList.remove('bg-cream/95', 'backdrop-blur-md', 'shadow-md', 'py-4.5 border-b border-dark/5');
+          header.classList.add('py-6');
+        }
+      });
 
-      gl_FragColor = vec4(clamp(boosted, 0.0, 1.0), color.a * alpha);
-    }
-  `;
+      // RENDER INTUITIVE INTERACTIVE MENU CARDS
+      function renderMenuCards(filteredCategory) {
+        const grid = document.getElementById('menu-grid');
+        grid.innerHTML = '';
+        
+        const filtered = filteredCategory === 'all' 
+          ? MENU_ITEMS 
+          : MENU_ITEMS.filter(it => it.category === filteredCategory);
 
-  function createShader(type, source) {
-    const s = gl.createShader(type);
-    gl.shaderSource(s, source);
-    gl.compileShader(s);
-    return s;
-  }
+        filtered.forEach(item => {
+          const card = document.createElement('div');
+          card.className = "group bg-white rounded-2xl overflow-hidden border border-dark/5 shadow-md flex flex-col justify-between transition-all duration-300 relative hover:shadow-xl";
+          
+          card.innerHTML = `
+            <div class="relative overflow-hidden bg-cream/30 h-44 flex items-center justify-center p-4">
+              <img 
+                src="https://lifeseemsendless.github.io/burger/${item.img}" 
+                alt="${item.name}" 
+                class="w-[75%] h-full object-contain transform group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-500 img-upscale" 
+              />
+              
+              <!-- Custom Hover Overlay Stats -->
+              <div class="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-xs border-t border-dark/5 p-3 flex justify-between items-center text-[8px] uppercase font-bold tracking-widest text-dark/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div>
+                  <span class="block text-[6px] text-dark/30">BUN</span>
+                  <span class="text-dark font-black">${item.bun}</span>
+                </div>
+                <div>
+                  <span class="block text-[6px] text-dark/30">PATTY</span>
+                  <span class="text-dark font-black">${item.patty}</span>
+                </div>
+                <div>
+                  <span class="block text-[6px] text-dark/30">PROTEIN</span>
+                  <span class="text-dark font-black">${item.protein}</span>
+                </div>
+              </div>
 
-  const vs = createShader(gl.VERTEX_SHADER, vsSource);
-  const fs = createShader(gl.FRAGMENT_SHADER, fsSource);
-  const prog = gl.createProgram();
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
+              <button onclick="addToCartRaw('${item.name}', ${item.numPrice})" class="absolute top-3 right-3 bg-yellow-primary text-dark font-black text-sm w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-md shadow-dark/10 hover:bg-red-primary hover:text-white hover:rotate-90 transition-all duration-300">
+                +
+              </button>
+            </div>
 
-  const verts = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
-
-  const pos = gl.getAttribLocation(prog, 'position');
-  gl.enableVertexAttribArray(pos);
-  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
-
-  const tex = gl.createTexture();
-  gl.bindTexture(gl.TEXTURE_2D, tex);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-  function render() {
-    if (vid.readyState >= vid.HAVE_CURRENT_DATA) {
-      if (canvas.width !== vid.videoWidth) {
-        canvas.width = vid.videoWidth;
-        canvas.height = vid.videoHeight;
-        gl.viewport(0, 0, canvas.width, canvas.height);
+            <div class="p-5 flex-1 flex flex-col justify-between">
+              <div>
+                <h4 class="font-display text-base text-red-primary tracking-wide">${item.name}</h4>
+                <p class="text-xs text-dark/60 font-semibold tracking-wide uppercase line-clamp-2 mt-1.5">${item.desc}</p>
+              </div>
+              <div class="flex items-center justify-between mt-5 pt-3 border-t border-dark/5">
+                <span class="font-display text-lg text-dark">${item.price}</span>
+                <button onclick="addToCartRaw('${item.name}', ${item.numPrice})" class="bg-red-primary hover:bg-dark text-white font-bold text-[10px] uppercase tracking-widest px-4 py-2 rounded-full cursor-pointer transition-colors">
+                  Add
+                </button>
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
       }
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, vid);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    }
-    requestAnimationFrame(render);
-  }
 
-  vid.addEventListener('playing', render);
-  if (!vid.paused) render();
+      // CATEGORY TAB SWITCHER
+      function filterCategory(cat) {
+        document.querySelectorAll('.category-tab').forEach(tab => {
+          tab.classList.remove('bg-red-primary', 'border-red-primary', 'text-white', 'shadow-md');
+          tab.classList.add('border-dark/15', 'text-dark/70');
+        });
+        const activeTab = document.getElementById(`tab-${cat}`);
+        activeTab.classList.add('bg-red-primary', 'border-red-primary', 'text-white', 'shadow-md');
+        activeTab.classList.remove('border-dark/15', 'text-dark/70');
+        renderMenuCards(cat);
+      }
 
-  vid.play().catch(() => {
-    // Autoplay constraint handling
-  });
-})();
+      // LAUNCH CHROMACANVAS WEBGL PIPELINE WITH INTEGRATED CONTRAST UPSCALER
+      function setupWebGLChroma() {
+        const video = document.getElementById('hero-video-ref');
+        const canvas = document.getElementById('chroma-canvas');
+        if (!video || !canvas) return;
 
-// Active scroll tracking for nav colors & loader shutdown
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    document.getElementById('loader').style.opacity = '0';
-    setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
-  }, 1600);
-});
+        let gl;
+        try {
+          gl = canvas.getContext('webgl', { alpha: true, preimageAlpha: false, antialias: true });
+        } catch (e) {
+          console.warn("WebGL failure.");
+        }
 
-window.addEventListener('scroll', () => {
-  const scrolled = window.scrollY > 60;
-  const navbar = document.getElementById('navbar');
-  const logo = document.getElementById('nav-logo');
-  
-  navbar.classList.toggle('bg-cream/96', scrolled);
-  navbar.classList.toggle('backdrop-blur-md', scrolled);
-  navbar.classList.toggle('border-b', scrolled);
-  navbar.classList.toggle('border-redPrimary/15', scrolled);
-  navbar.classList.toggle('shadow-sm', scrolled);
-  
-  logo.classList.toggle('text-dark', scrolled);
-  logo.classList.remove('text-white', scrolled);
+        if (!gl) {
+          // Soft blending fallback inside CSS
+          video.classList.remove('opacity-0', 'absolute', 'w-1', 'h-1');
+          video.classList.add('w-full', 'h-full', 'mix-blend-color-dodge');
+          canvas.style.display = 'none';
+          return;
+        }
 
-  const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
-  document.getElementById('progress').style.transform = `scaleX(${pct})`;
-});
+        // Compliant Shaders
+        const vsSource = `
+          attribute vec2 position;
+          varying vec2 vTexCoord;
+          void main() {
+            vTexCoord = vec2(position.x * 0.5 + 0.5, 0.5 - position.y * 0.5);
+            gl_Position = vec4(position, 0.0, 1.0);
+          }
+        `;
 
-// Cursor ticker loop
-const cursorDot = document.getElementById('cursor-dot');
-const cursorRing = document.getElementById('cursor-ring');
-let cx = 0, cy = 0, rx = 0, ry = 0;
-document.addEventListener('mousemove', e => {
-  cx = e.clientX; cy = e.clientY;
-  cursorDot.style.left = cx+'px'; cursorDot.style.top = cy+'px';
-});
-(function ringTick() {
-  rx += (cx - rx) * 0.15; ry += (cy - ry) * 0.15;
-  cursorRing.style.left = rx+'px'; cursorRing.style.top = ry+'px';
-  requestAnimationFrame(ringTick);
-})();
+        const fsSource = `
+          precision mediump float;
+          varying vec2 vTexCoord;
+          uniform sampler2D uTexture;
+          uniform float uSimilarity;
+          uniform float uSmoothness;
 
-document.querySelectorAll('a, button, input, select').forEach(el => {
-  el.addEventListener('mouseenter', () => {
-    cursorDot.style.transform = 'translate(-50%, -50%) scale(2)';
-    cursorRing.style.width = '64px'; cursorRing.style.height = '64px';
-  });
-  el.addEventListener('mouseleave', () => {
-    cursorDot.style.transform = 'translate(-50%, -50%) scale(1)';
-    cursorRing.style.width = '48px'; cursorRing.style.height = '48px';
-  });
-});
-</script>
-</body>
+          vec3 unpremultiply(vec4 color, float alpha) {
+            if (alpha > 0.001) {
+              return color.rgb / max(alpha, 0.12);
+            }
+            return color.rgb;
+          }
+
+          void main() {
+            vec4 color = texture2D(uTexture, vTexCoord);
+            float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+            float maxChannel = max(color.r, max(color.g, color.b));
+            float minChannel = min(color.r, min(color.g, color.b));
+            float chroma = maxChannel - minChannel;
+
+            float blackness = max(luma, maxChannel * 0.85);
+            float alpha = smoothstep(uSimilarity, uSimilarity + uSmoothness, blackness);
+            float chromaProtect = smoothstep(0.012, 0.045, chroma);
+            alpha = max(alpha, chromaProtect * smoothstep(0.008, 0.025, blackness));
+
+            float borderFadeX = smoothstep(0.0, 0.04, vTexCoord.x) * smoothstep(1.0, 0.96, vTexCoord.x);
+            float borderFadeY = smoothstep(0.0, 0.04, vTexCoord.y) * smoothstep(1.0, 0.96, vTexCoord.y);
+            alpha *= (borderFadeX * borderFadeY);
+
+            // GPU detail unsharp mask sharpener
+            float stepX = 1.0 / 640.0;
+            float stepY = 1.0 / 640.0;
+             
+            vec4 leftColor  = texture2D(uTexture, vec2(vTexCoord.x - stepX, vTexCoord.y));
+            vec4 rightColor = texture2D(uTexture, vec2(vTexCoord.x + stepX, vTexCoord.y));
+            vec4 upColor    = texture2D(uTexture, vec2(vTexCoord.x, vTexCoord.y + stepY));
+            vec4 downColor  = texture2D(uTexture, vec2(vTexCoord.x, vTexCoord.y - stepY));
+
+            float alphaL = smoothstep(uSimilarity, uSimilarity + uSmoothness, max(dot(leftColor.rgb, vec3(0.299, 0.587, 0.114)), max(leftColor.r, max(leftColor.g, leftColor.b)) * 0.85));
+            float alphaR = smoothstep(uSimilarity, uSimilarity + uSmoothness, max(dot(rightColor.rgb, vec3(0.299, 0.587, 0.114)), max(rightColor.r, max(rightColor.g, rightColor.b)) * 0.85));
+            float alphaU = smoothstep(uSimilarity, uSimilarity + uSmoothness, max(dot(upColor.rgb, vec3(0.299, 0.587, 0.114)), max(upColor.r, max(upColor.g, upColor.b)) * 0.85));
+            float alphaD = smoothstep(uSimilarity, uSimilarity + uSmoothness, max(dot(downColor.rgb, vec3(0.299, 0.587, 0.114)), max(downColor.r, max(downColor.g, downColor.b)) * 0.85));
+
+            vec3 centerRgb = unpremultiply(color, alpha);
+            vec3 leftRgb   = unpremultiply(leftColor, alphaL);
+            vec3 rightRgb  = unpremultiply(rightColor, alphaR);
+            vec3 upRgb     = unpremultiply(upColor, alphaU);
+            vec3 downRgb   = unpremultiply(downColor, alphaD);
+
+            vec3 neighborMean = (leftRgb + rightRgb + upRgb + downRgb) * 0.25;
+            vec3 sharpRgb = centerRgb + (centerRgb - neighborMean) * 0.7;
+            vec3 upscaledRgb = mix(centerRgb, sharpRgb, 0.85);
+
+            float rawLuma = dot(upscaledRgb, vec3(0.299, 0.587, 0.114));
+            upscaledRgb = mix(vec3(rawLuma), upscaledRgb, 1.25); // saturating
+            upscaledRgb = (upscaledRgb - 0.5) * 1.08 + 0.51;
+            upscaledRgb = clamp(upscaledRgb, 0.0, 1.0);
+
+            gl_FragColor = vec4(upscaledRgb, color.a * alpha);
+          }
+        `;
+
+        const loadShader = (type, source) => {
+          const shader = gl.createShader(type);
+          gl.shaderSource(shader, source);
+          gl.compileShader(shader);
+          return shader;
+        };
+
+        const vs = loadShader(gl.VERTEX_SHADER, vsSource);
+        const fs = loadShader(gl.FRAGMENT_SHADER, fsSource);
+        const program = gl.createProgram();
+        gl.attachShader(program, vs);
+        gl.attachShader(program, fs);
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const vertices = new Float32Array([
+          -1, -1,  1, -1, -1,  1,
+          -1,  1,  1, -1,  1,  1,
+        ]);
+
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const posLoc = gl.getAttribLocation(program, 'position');
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+        gl.uniform1f(gl.getUniformLocation(program, 'uSimilarity'), 0.05);
+        gl.uniform1f(gl.getUniformLocation(program, 'uSmoothness'), 0.08);
+
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        function render() {
+          if (video.readyState >= video.HAVE_CURRENT_DATA) {
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            if (canvas.width !== w || canvas.height !== h) {
+              canvas.width = w;
+              canvas.height = h;
+              gl.viewport(0, 0, w, h);
+            }
+            gl.clearColor(0,0,0,0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            try {
+              gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+            } catch (err) {
+              // Safety CORS callback
+              video.classList.remove('opacity-0', 'absolute');
+              video.classList.add('w-full', 'h-full', 'mix-blend-color-dodge');
+              canvas.style.display = 'none';
+              return;
+            }
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+          }
+          requestAnimationFrame(render);
+        }
+
+        video.addEventListener('playing', render);
+        if (!video.paused) {
+          render();
+        }
+      }
+
+      // INTERACTIVE TOAST
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        const textElement = document.getElementById('toast-text');
+        textElement.innerText = msg;
+        
+        toast.className = "fixed bottom-6 right-6 z-[100] transform translate-y-0 opacity-100 transition-all duration-300";
+        setTimeout(() => {
+          toast.className = "fixed bottom-6 right-6 z-[100] transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300";
+        }, 2200);
+      }
+
+      // CART MANAGEMENT ENGINE
+      function addToCartRaw(name, price) {
+        const itemIndex = CART.findIndex(it => it.name === name);
+        if (itemIndex > -1) {
+          CART[itemIndex].qty += 1;
+        } else {
+          CART.push({ name, price, qty: 1 });
+        }
+        updateCartUi();
+        showToast(`ADDED ${name} TO CART`);
+      }
+
+      function updateCartUi() {
+        const badge = document.getElementById('cart-count-badge');
+        const emptyMsg = document.getElementById('empty-cart-message');
+        const list = document.getElementById('cart-items-list');
+        const totalText = document.getElementById('cart-subtotal');
+
+        const totalItemsCount = CART.reduce((acc, sum) => acc + sum.qty, 0);
+        
+        if (totalItemsCount > 0) {
+          badge.innerText = totalItemsCount;
+          badge.classList.remove('scale-0');
+          badge.classList.add('scale-100');
+          emptyMsg.style.display = 'none';
+        } else {
+          badge.classList.add('scale-0');
+          badge.classList.remove('scale-100');
+          emptyMsg.style.display = 'block';
+        }
+
+        // Render card items
+        list.innerHTML = '';
+        if (totalItemsCount === 0) {
+          list.appendChild(emptyMsg);
+        } else {
+          let sumCost = 0;
+          CART.forEach((item, idx) => {
+            sumCost += (item.price * item.qty);
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center bg-cream/15 p-4 rounded-xl border border-dark/5";
+            div.innerHTML = `
+              <div>
+                <h5 class="font-bold text-[11px] uppercase tracking-wider text-dark">${item.name}</h5>
+                <span class="block text-[10px] text-red-primary font-bold mt-1">$${item.price.toFixed(2)} x ${item.qty}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="changeQty(${idx}, -1)" class="w-6 h-6 rounded-full border border-dark/10 flex items-center justify-center font-bold text-xs">-</button>
+                <button onclick="changeQty(${idx}, 1)" class="w-6 h-6 rounded-full border border-dark/10 flex items-center justify-center font-bold text-xs">+</button>
+              </div>
+            `;
+            list.appendChild(div);
+          });
+          totalText.innerText = `$${sumCost.toFixed(2)}`;
+        }
+      }
+
+      function changeQty(index, amt) {
+        CART[index].qty += amt;
+        if (CART[index].qty <= 0) {
+          CART.splice(index, 1);
+        }
+        updateCartUi();
+      }
+
+      // DRAWER SYSTEMS Setup
+      function setupEventListeners() {
+        // Mobile navigation triggers
+        const trigger = document.getElementById('mobile-menu-trigger');
+        const drawer = document.getElementById('mobile-drawer');
+        const closeBtn = document.getElementById('mobile-drawer-close');
+
+        trigger.addEventListener('click', () => {
+          drawer.classList.remove('opacity-0', 'pointer-events-none');
+          drawer.children[0].classList.remove('translate-x-full');
+        });
+
+        const closeMobile = () => {
+          drawer.classList.add('opacity-0', 'pointer-events-none');
+          drawer.children[0].classList.add('translate-x-full');
+        };
+
+        closeBtn.addEventListener('click', closeMobile);
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+          link.addEventListener('click', closeMobile);
+        });
+
+        // Cart drawer triggers
+        const cartTrigger = document.getElementById('cart-trigger');
+        const cartDrawer = document.getElementById('cart-drawer');
+        const cartClose = document.getElementById('cart-drawer-close');
+
+        cartTrigger.addEventListener('click', () => {
+          cartDrawer.classList.remove('opacity-0', 'pointer-events-none');
+          cartDrawer.children[0].classList.remove('translate-x-full');
+        });
+
+        const closeCart = () => {
+          cartDrawer.classList.add('opacity-0', 'pointer-events-none');
+          cartDrawer.children[0].classList.add('translate-x-full');
+        };
+
+        cartClose.addEventListener('click', closeCart);
+        document.getElementById('cart-checkout-btn').addEventListener('click', () => {
+          if (CART.length === 0) {
+            showToast('YOUR CART IS EMPTY');
+            return;
+          }
+          closeCart();
+          showToast('PROCEEDING SPECULATIVE CHECKOUT...');
+          setTimeout(() => {
+            document.getElementById('s-order').scrollIntoView({ behavior: 'smooth' });
+          }, 400);
+        });
+
+        // Watch Story action
+        document.getElementById('play-video-story').addEventListener('click', () => {
+          showToast('OPENING STORY MODE...');
+          const vid = document.getElementById('hero-video-ref');
+          if (vid) {
+            vid.muted = false;
+            vid.currentTime = 0;
+            vid.play();
+          }
+        });
+      }
+
+      // TABLE BOOKING FORM CONTROLLER
+      function submitForm(e) {
+        e.preventDefault();
+        const n = document.getElementById('f-name').value;
+        const p = document.getElementById('f-phone').value;
+        const l = document.getElementById('f-loc').value;
+        const m = document.getElementById('f-meal').value;
+
+        document.getElementById('booking-form').style.display = 'none';
+        
+        const success = document.getElementById('booking-success');
+        success.style.display = 'flex';
+        document.getElementById('success-preview-text').innerText = `Hey ${n}, we've booked a nice table for you at our ${l} diner! Premium ${m} prep is locked in!`;
+
+        showToast('TABLE BOOKING SUCCESS');
+      }
+
+      function resetBookingForm() {
+        document.getElementById('booking-form').reset();
+        document.getElementById('booking-form').style.display = 'flex';
+        document.getElementById('booking-success').style.display = 'none';
+      }
+    </script>
+  </body>
 </html>
