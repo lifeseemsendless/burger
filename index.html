@@ -663,7 +663,7 @@
 
         let gl;
         try {
-          gl = canvas.getContext('webgl', { alpha: true, preimageAlpha: false, antialias: true });
+          gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: true });
         } catch (e) {
           console.warn("WebGL failure.");
         }
@@ -693,42 +693,55 @@
           uniform float uSimilarity;
           uniform float uSmoothness;
 
+          float computeAlpha(vec4 col, vec2 coord, float sim, float smoothVal) {
+            float luma = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+            float maxCol = max(col.r, max(col.g, col.b));
+            float minCol = min(col.r, min(col.g, col.b));
+            float chroma = maxCol - minCol;
+            
+            float blackness = max(luma, maxCol * 0.85);
+            float alpha = smoothstep(sim, sim + smoothVal, blackness);
+            
+            float chromaProtect = smoothstep(0.012, 0.045, chroma);
+            alpha = max(alpha, chromaProtect * smoothstep(0.008, 0.025, blackness));
+            
+            float fadeX = smoothstep(0.0, 0.04, coord.x) * smoothstep(1.0, 0.96, coord.x);
+            float fadeY = smoothstep(0.0, 0.04, coord.y) * smoothstep(1.0, 0.96, coord.y);
+            alpha *= (fadeX * fadeY);
+            
+            // Crushes the matte slightly (choking) to chop off any background compression ring noise
+            return smoothstep(0.18, 0.96, alpha);
+          }
+
           vec3 unpremultiply(vec4 color, float alpha) {
-            if (alpha > 0.001) {
-              return color.rgb / max(alpha, 0.12);
-            }
-            return color.rgb;
+            // Smoothly taper off the division to avoid boosting low-alpha noise
+            float factor = smoothstep(0.08, 0.38, alpha);
+            float divisor = mix(1.0, alpha, factor);
+            return color.rgb / max(divisor, 0.08);
           }
 
           void main() {
             vec4 color = texture2D(uTexture, vTexCoord);
-            float luma = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-            float maxChannel = max(color.r, max(color.g, color.b));
-            float minChannel = min(color.r, min(color.g, color.b));
-            float chroma = maxChannel - minChannel;
-
-            float blackness = max(luma, maxChannel * 0.85);
-            float alpha = smoothstep(uSimilarity, uSimilarity + uSmoothness, blackness);
-            float chromaProtect = smoothstep(0.012, 0.045, chroma);
-            alpha = max(alpha, chromaProtect * smoothstep(0.008, 0.025, blackness));
-
-            float borderFadeX = smoothstep(0.0, 0.04, vTexCoord.x) * smoothstep(1.0, 0.96, vTexCoord.x);
-            float borderFadeY = smoothstep(0.0, 0.04, vTexCoord.y) * smoothstep(1.0, 0.96, vTexCoord.y);
-            alpha *= (borderFadeX * borderFadeY);
+            float alpha = computeAlpha(color, vTexCoord, uSimilarity, uSmoothness);
 
             // GPU detail unsharp mask sharpener
             float stepX = 1.0 / 640.0;
             float stepY = 1.0 / 640.0;
              
-            vec4 leftColor  = texture2D(uTexture, vec2(vTexCoord.x - stepX, vTexCoord.y));
-            vec4 rightColor = texture2D(uTexture, vec2(vTexCoord.x + stepX, vTexCoord.y));
-            vec4 upColor    = texture2D(uTexture, vec2(vTexCoord.x, vTexCoord.y + stepY));
-            vec4 downColor  = texture2D(uTexture, vec2(vTexCoord.x, vTexCoord.y - stepY));
+            vec2 coordL = vec2(vTexCoord.x - stepX, vTexCoord.y);
+            vec2 coordR = vec2(vTexCoord.x + stepX, vTexCoord.y);
+            vec2 coordU = vec2(vTexCoord.x, vTexCoord.y + stepY);
+            vec2 coordD = vec2(vTexCoord.x, vTexCoord.y - stepY);
 
-            float alphaL = smoothstep(uSimilarity, uSimilarity + uSmoothness, max(dot(leftColor.rgb, vec3(0.299, 0.587, 0.114)), max(leftColor.r, max(leftColor.g, leftColor.b)) * 0.85));
-            float alphaR = smoothstep(uSimilarity, uSimilarity + uSmoothness, max(dot(rightColor.rgb, vec3(0.299, 0.587, 0.114)), max(rightColor.r, max(rightColor.g, rightColor.b)) * 0.85));
-            float alphaU = smoothstep(uSimilarity, uSimilarity + uSmoothness, max(dot(upColor.rgb, vec3(0.299, 0.587, 0.114)), max(upColor.r, max(upColor.g, upColor.b)) * 0.85));
-            float alphaD = smoothstep(uSimilarity, uSimilarity + uSmoothness, max(dot(downColor.rgb, vec3(0.299, 0.587, 0.114)), max(downColor.r, max(downColor.g, downColor.b)) * 0.85));
+            vec4 leftColor  = texture2D(uTexture, coordL);
+            vec4 rightColor = texture2D(uTexture, coordR);
+            vec4 upColor    = texture2D(uTexture, coordU);
+            vec4 downColor  = texture2D(uTexture, coordD);
+
+            float alphaL = computeAlpha(leftColor, coordL, uSimilarity, uSmoothness);
+            float alphaR = computeAlpha(rightColor, coordR, uSimilarity, uSmoothness);
+            float alphaU = computeAlpha(upColor, coordU, uSimilarity, uSmoothness);
+            float alphaD = computeAlpha(downColor, coordD, uSimilarity, uSmoothness);
 
             vec3 centerRgb = unpremultiply(color, alpha);
             vec3 leftRgb   = unpremultiply(leftColor, alphaL);
@@ -745,7 +758,8 @@
             upscaledRgb = (upscaledRgb - 0.5) * 1.08 + 0.51;
             upscaledRgb = clamp(upscaledRgb, 0.0, 1.0);
 
-            gl_FragColor = vec4(upscaledRgb, color.a * alpha);
+            // PREMULTIPLIED ALPHA OUTPUT: Solves dark edge blending issues perfectly
+            gl_FragColor = vec4(upscaledRgb * alpha, alpha);
           }
         `;
 
