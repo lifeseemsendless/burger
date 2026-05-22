@@ -1,1286 +1,1002 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ShoppingBag, 
-  Play, 
-  X, 
-  ArrowRight, 
-  MapPin, 
-  Phone, 
-  User, 
-  MessageSquare,
-  UtensilsCrossed,
-  Heart,
-  Menu,
-  ChevronRight,
-  TrendingUp,
-  Star
-} from 'lucide-react';
-import gsap from 'gsap';
-import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
-import { ChromaKeyCanvas } from './components/ChromaKeyCanvas';
-
-// Register standard GSAP plugins
-gsap.registerPlugin(ScrollToPlugin);
-
-const BASE_URL = 'https://lifeseemsendless.github.io/burger';
-
-// Smart assets resolver helper
-const getAsset = (name: string) => {
-  return `${BASE_URL}/${name}`;
-};
-
-// Menu Item Data
-interface MenuItem {
-  name: string;
-  desc: string;
-  price: string;
-  category: string;
-  bun: string;
-  patty: string;
-  spice: string;
-  cal: string;
-  protein: string;
-  img: string;
-}
-
-const MENU_ITEMS: MenuItem[] = [
-  { name: 'CLASSIC BURGER', desc: 'Smash patty, brioche bun, house sauce', price: '$16', category: 'burger', bun: 'BRIOCHE', patty: 'BEEF', spice: 'MILD', cal: '900', protein: '51g', img: 'burger1.jpeg' },
-  { name: 'SPICY JALAPEÑO', desc: 'Jalapeño, pepper jack, chipotle aioli', price: '$18', category: 'burger', bun: 'BRIOCHE', patty: 'BEEF', spice: 'HOT', cal: '950', protein: '53g', img: 'burger2.jpeg' },
-  { name: 'MUSHROOM BURGER', desc: 'Crispy mushroom, truffle aioli, sesame bun', price: '$10.99', category: 'burger', bun: 'SESAME', patty: 'BEEF', spice: 'MILD', cal: '870', protein: '47g', img: 'burger3.jpeg' },
-  { name: 'HAWAIIAN BURGER', desc: 'Pineapple glaze, teriyaki, sesame bun', price: '$12.29', category: 'burger', bun: 'SESAME', patty: 'BEEF', spice: 'MILD', cal: '920', protein: '50g', img: 'burger4.jpeg' },
-  { name: 'BBQ BLAST PIZZA', desc: 'Smoky BBQ base, pulled pork, jalapeño', price: '$14.99', category: 'pizza', bun: '—', patty: '—', spice: 'MED', cal: '1100', protein: '60g', img: 'burger5.jpeg' },
-  { name: 'PEPPERONI BEAST', desc: 'Triple pepperoni, mozzarella, chilli oil', price: '$13.49', category: 'pizza', bun: '—', patty: '—', spice: 'HOT', cal: '1050', protein: '58g', img: 'burger6.jpeg' },
-  { name: 'GOLDEN FRIES', desc: 'Sea salt, rosemary, truffle option', price: '$3.99', category: 'sides', bun: '—', patty: '—', spice: 'NONE', cal: '380', protein: '5g', img: 'burger7.jpeg' },
-  { name: 'FROSTED SHAKE', desc: 'Vanilla, chocolate or strawberry', price: '$4.49', category: 'drinks', bun: '—', patty: '—', spice: 'NONE', cal: '420', protein: '8g', img: 'slid1.jpg' },
-];
-
-export default function App() {
-  const [loading, setLoading] = useState(true);
-  const [scrollPct, setScrollPct] = useState(0);
-  const [navScrolled, setNavScrolled] = useState(false);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [menuFilter, setMenuFilter] = useState('all');
-  const [cartCount, setCartCount] = useState(0);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [videoModalOpen, setVideoModalOpen] = useState(false);
-  
-  // Custom cursor states
-  const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
-  const [cursorRingPos, setCursorRingPos] = useState({ x: -100, y: -100 });
-  const [cursorHovered, setCursorHovered] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
-
-  // Stats Counter values with intersection observer integration
-  const [stats, setStats] = useState({ locations: 0, menuItems: 0, satisfaction: 0 });
-  const statsSectionRef = useRef<HTMLDivElement>(null);
-
-  // Form submission states
-  const [formName, setFormName] = useState('');
-  const [formPhone, setFormPhone] = useState('');
-  const [formLocation, setFormLocation] = useState('Downtown');
-  const [formMeal, setFormMeal] = useState('Double Trouble Burger');
-  const [formNotes, setFormNotes] = useState('');
-  const [formSubmitted, setFormSubmitted] = useState(false);
-
-  // CSS 3D Tilt Refs
-  const cardRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-
-  useEffect(() => {
-    // Detect Touch Device
-    const detectTouch = () => {
-      setIsTouchDevice(window.matchMedia('(pointer: coarse)').matches);
-    };
-    detectTouch();
-    window.addEventListener('resize', detectTouch);
-    return () => window.removeEventListener('resize', detectTouch);
-  }, []);
-
-  // Page Loader Timing
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1800);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Page scrolling tracking & nav blur toggle
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrolled = window.scrollY;
-      setNavScrolled(scrolled > 60);
-
-      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalHeight > 0) {
-        setScrollPct(scrolled / totalHeight);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Custom Cursor rendering interpolation loop
-  useEffect(() => {
-    if (isTouchDevice) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      setCursorPos({ x: e.clientX, y: e.clientY });
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    let ringId: number;
-    let rx = -100, ry = -100;
-    const animateRing = () => {
-      setCursorPos(currentPos => {
-        rx += (currentPos.x - rx) * 0.15;
-        ry += (currentPos.y - ry) * 0.15;
-        setCursorRingPos({ x: rx, y: ry });
-        return currentPos;
-      });
-      ringId = requestAnimationFrame(animateRing);
-    };
-    ringId = requestAnimationFrame(animateRing);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      cancelAnimationFrame(ringId);
-    };
-  }, [isTouchDevice]);
-
-  // Handle intersection observer to counter animate stats
-  useEffect(() => {
-    const section = statsSectionRef.current;
-    if (!section) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Smoothly animate stats counting
-            const duration = 1500; // ms
-            const startTimestamp = performance.now();
-
-            const animate = (now: number) => {
-              const elapsed = now - startTimestamp;
-              const progress = Math.min(elapsed / duration, 1);
-
-              setStats({
-                locations: Math.floor(progress * 12),
-                menuItems: Math.floor(progress * 50),
-                satisfaction: Math.floor(progress * 98),
-              });
-
-              if (progress < 1) {
-                requestAnimationFrame(animate);
-              }
-            };
-            requestAnimationFrame(animate);
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.3 }
-    );
-
-    observer.observe(section);
-    return () => {
-      if (section) observer.unobserve(section);
-    };
-  }, []);
-
-  const handleSmoothScroll = (targetId: string) => {
-    setMobileDrawerOpen(false);
-    const element = document.querySelector(targetId);
-    if (element) {
-      gsap.to(window, {
-        duration: 1.2,
-        scrollTo: { y: element, offsetY: 70 },
-        ease: 'power3.inOut',
-      });
-    }
-  };
-
-  const addToCart = (itemName: string) => {
-    setCartCount((prev) => prev + 1);
-    setToastMessage(itemName);
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Billy Boyz | Legendary Smashed Burgers</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Righteous&family=DM+Sans:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     
-    // Auto clear toast
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
-  };
+    <!-- Tailwind CSS (Play CDN for standalone single-file running) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              cream: '#F0E6D3',
+              cream2: '#EAD9C0',
+              'red-primary': '#D91212',
+              'red-dark': '#AA0A0A',
+              'yellow-primary': '#F5B700',
+              'yellow2': '#FFC929',
+              dark: '#1A0A00',
+            },
+            fontFamily: {
+              display: ['"Alfa Slab One"', 'serif'],
+              sub: ['Righteous', 'sans-serif'],
+              sans: ['"DM Sans"', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    
+    <!-- GSAP for Smooth scroll animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-  const handleFormOrderSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormSubmitted(true);
-    setTimeout(() => {
-      setFormSubmitted(false);
-      setFormName('');
-      setFormPhone('');
-      setFormNotes('');
-    }, 4500);
-  };
-
-  // Parallax / 3D Card Hover Effect on Desktop Devices
-  const handleCardMouseMove = (e: React.MouseEvent<HTMLDivElement>, id: string) => {
-    if (isTouchDevice) return;
-    const card = cardRefs.current[id];
-    if (!card) return;
-
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-
-    const dx = x / rect.width;
-    const dy = y / rect.height;
-
-    // Apply smooth custom prospective 3D transformations
-    card.style.transform = `perspective(800px) rotateY(${dx * 12}deg) rotateX(${-dy * 12}deg) translateY(-8px) scale(1.025)`;
-    card.style.boxShadow = '0 25px 50px -12px rgba(26,10,0,0.18)';
-  };
-
-  const handleCardMouseLeave = (id: string) => {
-    const card = cardRefs.current[id];
-    if (!card) return;
-    card.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) translateY(0) scale(1)';
-    card.style.boxShadow = '';
-  };
-
-  const filteredItems = menuFilter === 'all' 
-    ? MENU_ITEMS 
-    : MENU_ITEMS.filter(item => item.category === menuFilter);
-
-  return (
-    <div className="relative min-h-screen bg-cream text-dark antialiased select-none font-sans overflow-x-hidden">
+    <style>
+      /* Custom Ticker loop animations */
+      @keyframes tickerGo {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-ticker {
+        animation: tickerGo 25s linear infinite;
+      }
+      @keyframes marqueeGo {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      .animate-marquee {
+        animation: marqueeGo 35s linear infinite;
+      }
       
-      {/* ── CUSTOM MOUSE CURSORS (DESKTOP ONLY) ── */}
-      {!isTouchDevice && (
-        <>
-          <div 
-            id="cursor-dot" 
-            className="fixed top-0 left-0 w-4 h-4 rounded-full pointer-events-none z-[9999] -translate-x-1/2 -translate-y-1/2 transition-transform duration-200"
-            style={{
-              left: `${cursorPos.x}px`,
-              top: `${cursorPos.y}px`,
-              background: 'radial-gradient(circle at 45% 35%, #6abf4b 0%, #2e8b00 60%, #1a5500 100%)',
-              boxShadow: '0 0 0 2px rgba(255, 255, 255, 0.5)',
-              transform: `translate(-50%, -50%) ${cursorHovered ? 'scale(2)' : 'scale(1)'}`,
-            }}
-          />
-          <div 
-            id="cursor-ring" 
-            className="fixed top-0 left-0 w-12 h-12 rounded-full border border-red-primary/35 pointer-events-none z-[9998] -translate-x-1/2 -translate-y-1/2 transition-[width,height] duration-200"
-            style={{
-              left: `${cursorRingPos.x}px`,
-              top: `${cursorRingPos.y}px`,
-              width: cursorHovered ? '64px' : '48px',
-              height: cursorHovered ? '64px' : '48px',
-            }}
-          />
-        </>
-      )}
+      /* WebGL Video / Image high-rendering sharpness */
+      .img-upscale {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        filter: contrast(1.06) saturate(1.12) brightness(1.02);
+      }
+      
+      /* Premium Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #F0E6D3;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #D91212;
+        border-radius: 5px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #AA0A0A;
+      }
+    </style>
+  </head>
+  <body class="bg-cream text-dark font-sans overflow-x-hidden">
 
-      {/* ── LOADER SCREEN ── */}
-      <AnimatePresence>
-        {loading && (
-          <motion.div 
-            id="loader" 
-            exit={{ opacity: 0, transition: { duration: 0.6 } }}
-            className="fixed inset-0 bg-cream z-[99999] flex flex-col items-center justify-center gap-5"
-          >
-            <motion.h1 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.4 }}
-              className="font-display text-5xl md:text-7xl text-white tracking-widest line-clamp-1"
-              style={{ WebkitTextStroke: '2.5px #D91212' }}
-            >
-              BILLY BOYZ
-            </motion.h1>
-            <div className="w-48 h-1 bg-red-primary/10 rounded-full overflow-hidden">
-              <motion.div 
-                initial={{ width: 0 }}
-                animate={{ width: '100%' }}
-                transition={{ duration: 1.5, ease: 'easeOut' }}
-                className="h-full bg-red-primary"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <!-- PAGE LOADER Overlay -->
+    <div id="page-loader" class="fixed inset-0 z-[999] bg-dark flex flex-col items-center justify-center transition-all duration-700 ease-out">
+      <div class="relative flex flex-col items-center">
+        <h1 class="font-display text-4xl sm:text-6xl text-red-primary tracking-wider animate-bounce select-none">BILLY BOYZ</h1>
+        <div class="w-48 h-1 bg-white/10 rounded-full mt-6 overflow-hidden relative">
+          <div class="absolute inset-y-0 left-0 bg-yellow-primary w-2/3 rounded-full animate-pulse"></div>
+        </div>
+        <p class="text-white/40 font-mono text-[9px] uppercase tracking-widest mt-3 animate-pulse">Initializing GPU Sharpener...</p>
+      </div>
+    </div>
 
-      {/* ── SCROLL PROGRESS BAR ── */}
-      <div 
-        id="progress" 
-        className="fixed top-0 left-0 h-1 bg-red-primary origin-left z-[9999] transition-transform duration-100"
-        style={{ transform: `scaleX(${scrollPct})`, width: '100%' }}
-      />
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-6 right-6 z-[100] transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300">
+      <div class="bg-dark text-white font-mono text-[10px] font-bold uppercase tracking-widest px-6 py-4 rounded-full shadow-2xl border border-white/10 flex items-center gap-3">
+        <span class="w-2 h-2 rounded-full bg-yellow-primary animate-ping"></span>
+        <span id="toast-text">ADDED TO CART</span>
+      </div>
+    </div>
 
-      {/* ── NAVIGATION BAR ── */}
-      <nav 
-        id="navbar" 
-        className={`fixed top-0 left-0 right-0 z-[1000] flex items-center justify-between px-6 md:px-12 py-5 transition-all duration-300 ${
-          navScrolled ? 'bg-cream/96 backdrop-blur-md border-b border-red-primary/15 py-3.5 shadow-xs' : 'bg-transparent'
-        }`}
-      >
-        <a 
-          href="#" 
-          onClick={(e) => { e.preventDefault(); handleSmoothScroll('#s-hero'); }}
-          className={`font-display text-2xl tracking-normal text-white flex items-center gap-3 select-none hover:opacity-90 transition-colors duration-200 ${
-            navScrolled ? 'text-dark' : 'text-white'
-          }`}
-          onMouseEnter={() => setCursorHovered(true)}
-          onMouseLeave={() => setCursorHovered(false)}
-        >
-          <img 
-            src={getAsset('logo.jpeg')} 
-            alt="Billy Boyz" 
-            className={`w-9 h-9 rounded-full object-cover border-2 ${
-              navScrolled ? 'border-red-primary' : 'border-white/70'
-            }`}
-          />
-          <span className={navScrolled ? 'text-dark' : 'text-white'}>BILLY BOYZ</span>
+    <!-- HEADER / NAVIGATION --->
+    <header id="nav-header" class="fixed top-0 inset-x-0 z-[50] transition-all duration-300 py-6 px-6 md:px-12">
+      <div class="max-w-7xl mx-auto flex items-center justify-between">
+        <!-- Logo -->
+        <a href="#s-hero" class="flex items-center gap-2.5 group">
+          <span class="font-display text-xl sm:text-2xl text-red-primary leading-none tracking-widest transition-transform group-hover:scale-105">BILLY BOYZ</span>
         </a>
 
-        {/* Desktop Links */}
-        <ul className="hidden md:flex items-center gap-9 list-none">
-          {['Menu', 'Bundles', 'Order', 'Specials', 'Reviews'].map((link) => (
-            <li key={link}>
-              <a 
-                href={`#s-${link.toLowerCase()}`}
-                onClick={(e) => { e.preventDefault(); handleSmoothScroll(`#s-${link.toLowerCase()}`); }}
-                className="text-dark font-bold text-xs uppercase tracking-widest hover:text-red-primary transition-colors duration-200"
-                onMouseEnter={() => setCursorHovered(true)}
-                onMouseLeave={() => setCursorHovered(false)}
-              >
-                {link}
-              </a>
-            </li>
-          ))}
-        </ul>
+        <!-- Desktop Menu Links -->
+        <nav class="hidden md:flex items-center gap-8">
+          <a href="#s-menu" class="font-bold text-[11px] uppercase tracking-widest text-[#1a0a00]/70 hover:text-red-primary transition-colors">Menu</a>
+          <a href="#s-bundles" class="font-bold text-[11px] uppercase tracking-widest text-[#1a0a00]/70 hover:text-red-primary transition-colors">Bundles</a>
+          <a href="#s-order" class="font-bold text-[11px] uppercase tracking-widest text-[#1a0a00]/70 hover:text-red-primary transition-colors">Book Table</a>
+        </nav>
 
-        <div className="flex items-center gap-3 font-bold text-xs">
-          <button 
-            onClick={() => handleSmoothScroll('#s-order')}
-            className="hidden md:block bg-red-primary hover:bg-dark text-white px-7 py-3 rounded-full uppercase tracking-widest font-bold text-xs cursor-pointer shadow-md shadow-red-primary/15 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
-            onMouseEnter={() => setCursorHovered(true)}
-            onMouseLeave={() => setCursorHovered(false)}
-          >
-            Order Now
+        <!-- Right Controls -->
+        <div class="flex items-center gap-4">
+          <!-- Cart Button -->
+          <button id="cart-trigger" class="relative bg-white border border-dark/10 hover:border-red-primary text-dark p-3.5 rounded-full transition-all flex items-center justify-center">
+            <i data-lucide="shopping-bag" class="w-4.5 h-4.5"></i>
+            <span id="cart-count-badge" class="absolute -top-1.5 -right-1.5 bg-red-primary text-white text-[9px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white scale-0 transition-transform">0</span>
           </button>
-          
-          {/* Hamburger (Mobile) */}
-          <button 
-            onClick={() => setMobileDrawerOpen(!mobileDrawerOpen)}
-            className="md:hidden flex flex-col justify-center items-center gap-1.5 w-8 h-8 cursor-pointer focus:outline-none"
-            aria-label="Toggle Menu"
-          >
-            <span className={`block w-6 h-0.5 bg-dark transition-transform duration-300 ${mobileDrawerOpen ? 'rotate-45 translate-y-2' : ''}`} />
-            <span className={`block w-6 h-0.5 bg-dark transition-opacity duration-200 ${mobileDrawerOpen ? 'opacity-0' : ''}`} />
-            <span className={`block w-6 h-0.5 bg-dark transition-transform duration-300 ${mobileDrawerOpen ? '-rotate-45 -translate-y-2' : ''}`} />
+
+          <!-- Hamburger on mobile -->
+          <button id="mobile-menu-trigger" class="md:hidden bg-white border border-dark/10 text-dark p-3.5 rounded-full transition-all">
+            <i data-lucide="menu" class="w-4.5 h-4.5"></i>
           </button>
         </div>
-      </nav>
+      </div>
+    </header>
 
-      {/* ── MOBILE DRAWER SCREEN ── */}
-      <AnimatePresence>
-        {mobileDrawerOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 bg-cream z-[999] flex flex-col items-center justify-center gap-8 px-6 pt-24"
-          >
-            {['Menu', 'Bundles', 'Order', 'Specials', 'Reviews'].map((link) => (
-              <a 
-                key={link}
-                href={`#s-${link.toLowerCase()}`}
-                onClick={(e) => { e.preventDefault(); handleSmoothScroll(`#s-${link.toLowerCase()}`); }}
-                className="font-display text-4xl text-dark hover:text-red-primary transition-colors"
-              >
-                {link}
-              </a>
-            ))}
-            <button 
-              onClick={() => handleSmoothScroll('#s-order')}
-              className="bg-red-primary text-white text-sm font-bold uppercase tracking-widest px-8 py-4 rounded-full mt-4"
-            >
-              Order Now
+    <!-- MOBILE DRAWER MENU -->
+    <div id="mobile-drawer" class="fixed inset-0 z-[100] bg-dark/50 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+      <div class="absolute right-0 top-0 bottom-0 w-4/5 max-w-[320px] bg-cream p-8 shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300">
+        <div>
+          <div class="flex justify-between items-center mb-10">
+            <span class="font-display text-lg text-red-primary tracking-widest">BILLY BOYZ</span>
+            <button id="mobile-drawer-close" class="p-2 border border-dark/5 rounded-full">
+              <i data-lucide="x" class="w-4.5 h-4.5 text-dark"></i>
             </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+          <nav class="flex flex-col gap-6">
+            <a href="#s-menu" class="mobile-nav-link font-display text-2xl text-red-primary tracking-wide hover:translate-x-2 transition-transform">MENU</a>
+            <a href="#s-bundles" class="mobile-nav-link font-display text-2xl text-red-primary tracking-wide hover:translate-x-2 transition-transform">BUNDLES</a>
+            <a href="#s-order" class="mobile-nav-link font-display text-2xl text-red-primary tracking-wide hover:translate-x-2 transition-transform">ORDER</a>
+          </nav>
+        </div>
+        <div>
+          <p class="font-mono text-[9px] uppercase tracking-wider text-dark/40">SINCE 2018</p>
+        </div>
+      </div>
+    </div>
 
-      {/* ── FLOATING CART BUTTON ── */}
-      <button 
-        onClick={() => handleSmoothScroll('#s-order')}
-        className="fixed bottom-8 right-8 bg-red-primary hover:bg-dark text-white w-14 h-14 rounded-full flex items-center justify-center cursor-pointer z-[90] shadow-xl hover:scale-105 transition-all duration-300 border-none group"
-        onMouseEnter={() => setCursorHovered(true)}
-        onMouseLeave={() => setCursorHovered(false)}
-      >
-        <ShoppingBag className="w-6 h-6 group-hover:-rotate-12 transition-transform duration-300" />
-        <span className="absolute -top-1 -right-1 bg-yellow-primary text-dark font-black text-xs w-5 h-5 rounded-full flex items-center justify-center">
-          {cartCount}
-        </span>
-      </button>
-
-      {/* ── NOTIFICATION TOAST ── */}
-      <AnimatePresence>
-        {toastMessage && (
-          <motion.div 
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 15, scale: 0.95 }}
-            className="fixed bottom-24 md:bottom-28 right-8 z-[9000] bg-white border border-red-primary/20 rounded-2xl p-4 flex items-center gap-4 shadow-2xl min-w-[260px]"
-          >
-            <div className="w-10 h-10 bg-cream rounded-full flex items-center justify-center text-xl text-red-primary">🍔</div>
-            <div>
-              <p className="font-bold text-xs tracking-wide text-dark uppercase">{toastMessage}</p>
-              <p className="text-[10px] uppercase font-bold text-red-primary/90 mt-0.5">Added to your checkout cart!</p>
+    <!-- SHOPPING CART SLIDE OVERLAY -->
+    <div id="cart-drawer" class="fixed inset-0 z-[110] bg-dark/50 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-300">
+      <div class="absolute right-0 top-0 bottom-0 w-full sm:w-4/5 sm:max-w-[400px] bg-white p-8 shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300">
+        <div>
+          <div class="flex justify-between items-center mb-8 pb-4 border-b border-dark/5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="shopping-bag" class="w-5 h-5 text-red-primary"></i>
+              <span class="font-display text-base text-red-primary tracking-wide">CART SUMMARY</span>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── SECTION 1: HERO (REFINED WEBGL CHROMACANVAS INTEGRATED) ── */}
-      <section 
-        id="s-hero" 
-        className="relative min-h-screen bg-cream flex flex-col justify-center items-center px-6 md:px-12 py-24 overflow-hidden"
-      >
-        {/* Underlay / Display Word "THE BURGER" positioned at the back of the Canvas burger */}
-        <h1 className="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center font-display text-[15vw] md:text-[18vw] leading-none text-red-primary select-none z-[11] tracking-tight whitespace-nowrap overflow-hidden">
-          THE BURGER
-        </h1>
-
-        {/* 60FPS GPU Performance Chroma-Key WebGL Canvas Component */}
-        <div className="relative w-full max-w-[320px] sm:max-w-[480px] md:max-w-[700px] aspect-square z-[12] pointer-events-none mt-10 md:mt-0 transition-transform duration-500 hover:scale-105">
-          <ChromaKeyCanvas 
-            videoSrc={getAsset('burgerexp.mp4')} 
-            className="w-full h-full mix-blend-normal transform"
-            similarity={0.05}
-            smoothness={0.08}
-          />
+            <button id="cart-drawer-close" class="p-2 border border-dark/5 rounded-full hover:bg-dark/5 transition-colors">
+              <i data-lucide="x" class="w-4.5 h-4.5 text-dark"></i>
+            </button>
+          </div>
+          
+          <div id="cart-items-list" class="flex flex-col gap-4 overflow-y-auto max-h-[50vh] pr-2">
+            <!-- Dynamic Cart Items Rendered Here -->
+            <p id="empty-cart-message" class="text-xs uppercase font-bold tracking-widest text-dark/45 text-center mt-12">CART IS EMPTY</p>
+          </div>
         </div>
 
-        {/* Decorative Floating Badges */}
-        <div className="absolute top-[20%] left-[8%] z-[13] rotate-[-8deg] bg-red-primary text-white font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
-          SMASHED FRESH
+        <div class="border-t border-dark/5 pt-6">
+          <div class="flex justify-between items-center mb-6">
+            <span class="font-display text-sm tracking-widest text-dark/50 uppercase">Subtotal:</span>
+            <span id="cart-subtotal" class="font-display text-2xl text-red-primary">$0.00</span>
+          </div>
+          <button id="cart-checkout-btn" class="w-full bg-red-primary hover:bg-dark text-white font-black text-xs uppercase tracking-widest py-4 rounded-full transition-all">CHECKOUT ORDER</button>
         </div>
-        <div className="absolute bottom-[24%] right-[8%] z-[13] rotate-[6deg] bg-yellow-primary text-dark font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
-          BOLD FLAVOR
-        </div>
+      </div>
+    </div>
 
-        {/* Aesthetic Column Texts */}
-        <div className="absolute left-10 md:left-14 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-left">
-          <p className="text-dark/75 font-semibold text-xs leading-relaxed uppercase tracking-wider">
-            Smashed hot on the flat top, our prime patties lock in ultimate juiciness under a caramelized crust.
-          </p>
-        </div>
-        <div className="absolute right-10 md:right-14 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-right">
-          <p className="text-dark/75 font-bold text-xs leading-relaxed uppercase tracking-wider">
-            Topped with melted cheddar and our signature sauce crafted to satisfy your cravings since 2018.
-          </p>
-        </div>
+    <!-- HERO SECTION -->
+    <section id="s-hero" class="relative min-h-screen bg-cream flex flex-col justify-center items-center px-6 md:px-12 py-24 overflow-hidden">
+      <!-- "THE BURGER" Banner behind canvas burger -->
+      <h1 class="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center font-display text-[15vw] md:text-[18vw] leading-none text-red-primary select-none z-[11] tracking-tight whitespace-nowrap overflow-hidden">
+        THE BURGER
+      </h1>
 
-        {/* CTA Button Grid */}
-        <div className="flex flex-col sm:flex-row items-center gap-4 z-[13] mt-8 w-full sm:w-auto px-6">
-          <button 
-            onClick={() => handleSmoothScroll('#s-menu')}
-            className="w-full sm:w-auto bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-9 py-4.5 rounded-full shadow-lg shadow-red-primary/10 transition-all duration-300"
-            onMouseEnter={() => setCursorHovered(true)}
-            onMouseLeave={() => setCursorHovered(false)}
-          >
-            Explore Menu
-          </button>
-          <button 
-            onClick={() => setVideoModalOpen(true)}
-            className="w-full sm:w-auto border-2 border-dark hover:bg-dark hover:text-white text-dark font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-full transition-all duration-300 flex items-center justify-center gap-2"
-            onMouseEnter={() => setCursorHovered(true)}
-            onMouseLeave={() => setCursorHovered(false)}
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            Watch Our Story
-          </button>
-        </div>
-      </section>
-
-      {/* ── LOOPING TICKER BAND ── */}
-      <div className="relative bg-red-primary py-4.5 border-y-2 border-dark/10 overflow-hidden w-full select-none">
-        <div className="flex w-[200%] animate-ticker whitespace-nowrap">
-          {Array(2).fill([
-            { text: 'DOUBLE TROUBLE BURGER', img: 'burger1.jpeg' },
-            { text: 'CHEESE STACK PIZZA', img: 'burger2.jpeg' },
-            { text: 'CRUNCH PACK $37.9', img: 'burger3.jpeg' },
-            { text: 'HAWAIIAN BURGER', img: 'burger4.jpeg' },
-            { text: 'FREE DELIVERY TODAY', img: 'burger5.jpeg' },
-            { text: '20% OFF ALL ITEMS', img: 'burger6.jpeg' },
-          ]).flat().map((item, idx) => (
-            <div key={idx} className="inline-flex items-center gap-5 mr-16">
-              <img 
-                src={getAsset(item.img)} 
-                alt="" 
-                className="w-7 h-7 rounded-full object-cover border border-white/30"
-              />
-              <span className="font-display text-white text-sm md:text-base tracking-wider uppercase">
-                {item.text}
-              </span>
-              <span className="text-yellow-primary text-[8px]">●</span>
-            </div>
-          ))}
+      <!-- High Fidelity WebGL Canvas container -->
+      <div class="relative w-full max-w-[320px] sm:max-w-[480px] md:max-w-[700px] aspect-square z-[12] pointer-events-none mt-10 md:mt-0 transition-transform duration-500 hover:scale-105">
+        <div class="relative w-full h-full flex items-center justify-center">
+          <video
+            id="hero-video-ref"
+            src="https://lifeseemsendless.github.io/burger/burgerexp.mp4"
+            autoplay
+            muted
+            playsinline
+            preload="auto"
+            loop
+            class="absolute pointer-events-none opacity-0 w-1 h-1"
+            crossorigin="anonymous"
+          ></video>
+          <canvas
+            id="chroma-canvas"
+            class="w-full h-full mix-blend-normal transform"
+            style="display: block; max-width: 100%; height: auto; background: transparent;"
+          ></canvas>
         </div>
       </div>
 
-      {/* ── SECTION 2: PRODUCT DESCRIPTION ── */}
-      <section id="s-product" className="relative flex flex-col items-center justify-center text-center px-6 md:px-12 py-24 bg-cream overflow-hidden">
-        <div className="mb-6 flex flex-col items-center gap-3">
-          <div className="w-16 h-16 rounded-full bg-yellow-primary border-2 border-dark flex items-center justify-center p-1.5 shadow-md">
-            <img src={getAsset('logo.jpeg')} alt="" className="w-full h-full object-cover rounded-full" />
-          </div>
-          <span className="font-sub text-[10px] tracking-widest text-dark/50 uppercase">Top Classic</span>
-        </div>
-        <h2 className="font-display text-4xl sm:text-6xl md:text-8xl text-red-primary leading-tight tracking-tight max-w-[980px]">
-          JUICY CHEESY<br />FULLY LOADED
-        </h2>
-        <p className="font-sans text-dark/75 font-semibold text-xs sm:text-sm leading-relaxed max-w-[580px] mt-6 uppercase tracking-wider">
-          Billy Boyz is back and bolder than ever. Honouring our rich roots, we bring you the ultimate smashed experience — fully loaded, hot, and crafted fresh.
+      <!-- Decorative badges -->
+      <div class="absolute top-[20%] left-[8%] z-[13] rotate-[-8deg] bg-red-primary text-white font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
+        SMASHED FRESH
+      </div>
+      <div class="absolute bottom-[24%] right-[8%] z-[13] rotate-[6deg] bg-yellow-primary text-dark font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
+        BOLD FLAVOR
+      </div>
+
+      <!-- Hero descriptions -->
+      <div class="absolute left-10 md:left-14 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-left">
+        <p class="text-dark/75 font-semibold text-xs leading-relaxed uppercase tracking-wider">
+          Smashed hot on the flat top, our prime patties lock in ultimate juiciness under a caramelized crust.
         </p>
-        <button 
-          onClick={() => handleSmoothScroll('#s-menu')}
-          className="bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full mt-9"
-          onMouseEnter={() => setCursorHovered(true)}
-          onMouseLeave={() => setCursorHovered(false)}
-        >
-          Order Now
+      </div>
+      <div class="absolute right-10 md:right-14 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-right">
+        <p class="text-dark/75 font-bold text-xs leading-relaxed uppercase tracking-wider">
+          Topped with melted cheddar and our signature sauce crafted to satisfy your cravings since 2018.
+        </p>
+      </div>
+
+      <!-- CTA buttons -->
+      <div class="flex flex-col sm:flex-row items-center gap-4 z-[13] mt-8 w-full sm:w-auto px-6">
+        <a href="#s-menu" class="w-full sm:w-auto text-center bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-9 py-4.5 rounded-full shadow-lg transition-all">Explore Menu</a>
+        <button id="play-video-story" class="w-full sm:w-auto border-2 border-dark hover:bg-dark hover:text-white text-dark font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-full transition-all flex items-center justify-center gap-2">
+          <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>Watch Our Story
         </button>
-      </section>
+      </div>
+    </section>
 
-      {/* ── SECTION 3: TRAVEL (RESIZED & AESTHETIC INTEGRATION) ── */}
-      <section id="s-travel" className="bg-yellow-primary relative flex flex-col lg:flex-row lg:items-center justify-between px-6 md:px-16 py-24 gap-12 overflow-hidden">
-        <div className="max-w-[700px] z-[2]">
-          <h2 className="font-display text-5xl sm:text-7xl md:text-9xl text-white tracking-widest leading-[0.88] drop-shadow-md">
-            QUALITY THAT<br />TRAVELS WITH YOU
-          </h2>
+    <!-- TICKER BAND -->
+    <div class="relative bg-red-primary py-4.5 border-y-2 border-dark/10 overflow-hidden w-full select-none">
+      <div class="flex w-[200%] animate-ticker whitespace-nowrap">
+        <!-- Repeat content to allow smooth looping -->
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger1.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">DOUBLE TROUBLE BURGER</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
         </div>
-        <div className="max-w-[360px] flex flex-col gap-5 z-[2]">
-          <p className="text-dark/85 font-semibold text-xs sm:text-sm leading-relaxed uppercase tracking-wider">
-            Freshly packed smash burgers, ready to go wherever you crave. From our flat-top to any corner of the city, we ensure every layer stays hot and juicy.
-          </p>
-          <button 
-            onClick={() => handleSmoothScroll('#s-menu')}
-            className="w-fit bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full"
-            onMouseEnter={() => setCursorHovered(true)}
-            onMouseLeave={() => setCursorHovered(false)}
-          >
-            Explore Menu
-          </button>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger2.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CHEESE STACK PIZZA</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
         </div>
-
-        {/* Travel Grid Photos */}
-        <div className="flex gap-4 self-center lg:self-auto mt-6 lg:mt-0 z-[2]">
-          <div className="relative w-36 h-28 sm:w-44 sm:h-36 rounded-2xl overflow-hidden border-4 border-white shadow-xl rotate-[-4deg]">
-            <img src={getAsset('burger4.jpeg')} alt="" className="w-full h-full object-cover img-upscale" />
-            <span className="absolute top-2 left-1/2 -translate-x-1/2 bg-red-primary text-white font-display text-[9px] px-3 py-1 rounded">
-              Downtown
-            </span>
-          </div>
-          <div className="relative w-36 h-28 sm:w-44 sm:h-36 rounded-2xl overflow-hidden border-4 border-white shadow-xl rotate-[4deg] mt-6">
-            <img src={getAsset('burger3.jpeg')} alt="" className="w-full h-full object-cover img-upscale" />
-            <span className="absolute top-2 left-1/2 -translate-x-1/2 bg-red-primary text-white font-display text-[9px] px-3 py-1 rounded">
-              Westside
-            </span>
-          </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CRUNCH PACK $37.9</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
         </div>
-      </section>
-
-      {/* ── SECTION 4: SPLIT BANNER - FEEL THE CHANGE ── */}
-      <section id="s-change" className="grid grid-cols-1 md:grid-cols-2 bg-cream overflow-hidden">
-        <div className="relative flex flex-col justify-center px-6 sm:px-12 md:px-16 py-20">
-          <h2 className="font-display text-5xl sm:text-7xl md:text-8xl text-red-primary leading-none tracking-tight">
-            FEEL THE<br />CHANGE
-          </h2>
-          <p className="text-dark/75 font-semibold text-xs sm:text-sm leading-relaxed max-w-[360px] mt-6 mb-8 uppercase tracking-wider">
-            Smashed for the bold, built for the hungry. Dive into a legendary craft experience where every crispy edge and juicy layer rules.
-          </p>
-          <button 
-            onClick={() => handleSmoothScroll('#s-order')}
-            className="w-fit bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full"
-            onMouseEnter={() => setCursorHovered(true)}
-            onMouseLeave={() => setCursorHovered(false)}
-          >
-            Order Now
-          </button>
-
-          {/* Floating Sticker / Slid Badge */}
-          <div className="absolute right-[12%] bottom-[12%] w-24 sm:w-32 aspect-square z-10">
-            <img 
-              src={getAsset('slid1.jpg')} 
-              alt="" 
-              className="w-full h-full object-cover rounded-full border-4 border-cream shadow-xl hover:scale-105 transition-transform"
-            />
-          </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger4.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">HAWAIIAN BURGER</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
         </div>
-
-        <div className="relative min-h-[380px] md:min-h-[500px] flex items-center justify-center p-8 bg-black/5 select-none">
-          <div className="absolute inset-0 bg-radial-gradient from-white/10 to-transparent pointer-events-none" />
-          
-          {/* Framed Sharp Image slot: scaled elegantly to render in high-quality without being pixelated */}
-          <div className="relative w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96 rounded-3xl overflow-hidden border-8 border-white shadow-2xl rotate-[3deg] hover:rotate-0 hover:scale-[1.03] transition-all duration-500 group/image">
-            <img 
-              src={getAsset('burger3.jpeg')} 
-              alt="Billy Boyz Craft Burger" 
-              className="w-full h-full object-cover img-upscale" 
-            />
-            {/* Elegant overlay badge */}
-            <div className="absolute bottom-4 right-4 bg-yellow-primary text-dark font-display text-[9px] sm:text-[10px] px-4 py-2 rounded-full uppercase tracking-widest shadow-md">
-              ★ Signature Best
-            </div>
-          </div>
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger5.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">FREE DELIVERY TODAY</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
         </div>
-      </section>
-
-      {/* ── SECTION 5: THE INTERACTIVE MENU GRID ── */}
-      <section id="s-menu" className="relative px-6 md:px-12 py-24 bg-cream border-t border-dark/5">
-        <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-6">
-          <div>
-            <div className="text-[10px] uppercase font-bold tracking-widest text-red-primary/80 mb-2">✦ From Grill to Table</div>
-            <h2 className="font-display text-4xl sm:text-6xl md:text-8xl text-red-primary leading-none tracking-tight">
-              OUR FINEST<br />BURGER PICKS
-            </h2>
-          </div>
-          <div className="text-right">
-            <span className="font-mono text-xs uppercase tracking-widest text-dark/45 font-bold mr-2">
-              {filteredItems.length} ITEMS MATCHED ☰
-            </span>
-          </div>
+        <!-- Duplicate set -->
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger1.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">DOUBLE TROUBLE BURGER</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
         </div>
-
-        {/* Tab Selection Filter */}
-        <div className="flex flex-wrap items-center gap-2 mb-10">
-          {[
-            { tag: 'all', label: 'All Items' },
-            { tag: 'burger', label: 'Burgers' },
-            { tag: 'pizza', label: 'Pizza' },
-            { tag: 'sides', label: 'Sides' },
-            { tag: 'drinks', label: 'Drinks' }
-          ].map((tab) => (
-            <button
-              key={tab.tag}
-              onClick={() => setMenuFilter(tab.tag)}
-              className={`px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer ${
-                menuFilter === tab.tag
-                  ? 'bg-red-primary border-red-primary text-white shadow-md'
-                  : 'border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger2.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CHEESE STACK PIZZA</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
         </div>
-
-        {/* Responsive Grid with animated layouts */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 select-none">
-          {filteredItems.map((item, idx) => (
-            <div
-              key={item.name}
-              ref={(el) => { cardRefs.current[item.name] = el; }}
-              onMouseMove={(e) => handleCardMouseMove(e, item.name)}
-              onMouseLeave={() => handleCardMouseLeave(item.name)}
-              className="group bg-white rounded-2xl overflow-hidden border border-dark/5 shadow-md flex flex-col justify-between transition-all duration-300 transform-gpu relative"
-              style={{ contentVisibility: 'auto' }}
-            >
-              <div className="relative overflow-hidden bg-cream/30 h-44 flex items-center justify-center p-4">
-                <img 
-                  src={getAsset(item.img)} 
-                  alt={item.name} 
-                  className="w-[75%] h-full object-contain img-upscale transform group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-500" 
-                />
-                
-                {/* Custom Overlay Stats */}
-                <div className="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-xs border-t border-dark/5 p-3 flex justify-between items-center text-[8px] uppercase font-bold tracking-widest text-dark/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div>
-                    <span className="block text-[6px] text-dark/30">BUN</span>
-                    <span className="text-dark font-black">{item.bun}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[6px] text-dark/30">PATTY</span>
-                    <span className="text-dark font-black">{item.patty}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[6px] text-dark/30">SPICE</span>
-                    <span className="text-dark font-black">{item.spice}</span>
-                  </div>
-                  <div>
-                    <span className="block text-[6px] text-dark/30">PROTEIN</span>
-                    <span className="text-dark font-black">{item.protein}</span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => addToCart(item.name)}
-                  className="absolute top-3 right-3 bg-yellow-primary text-dark font-black text-sm w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-md shadow-dark/10 hover:bg-red-primary hover:text-white hover:rotate-90 transition-all duration-300"
-                >
-                  +
-                </button>
-              </div>
-
-              <div className="p-5 flex-1 flex flex-col justify-between">
-                <div>
-                  <h4 className="font-display text-base text-red-primary tracking-wide">{item.name}</h4>
-                  <p className="text-xs text-dark/60 font-semibold tracking-wide uppercase line-clamp-2 mt-1.5">{item.desc}</p>
-                </div>
-                <div className="flex items-center justify-between mt-5 pt-3 border-t border-dark/5">
-                  <span className="font-display text-lg text-dark">{item.price}</span>
-                  <button 
-                    onClick={() => addToCart(item.name)}
-                    className="bg-red-primary hover:bg-dark text-white font-bold text-[10px] uppercase tracking-widest px-4 py-2 rounded-full cursor-pointer transition-colors duration-200"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div class="inline-flex items-center gap-5 mr-16">
+          <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="" class="w-7 h-7 rounded-full object-cover border border-white/30 img-upscale" />
+          <span class="font-display text-white text-sm md:text-base tracking-wider uppercase">CRUNCH PACK $37.9</span>
+          <span class="text-yellow-primary text-[8px]">●</span>
         </div>
-      </section>
+      </div>
+    </div>
 
-      {/* ── SECTION 6: PERFECT MEAL BUNDLES ── */}
-      <section id="s-bundles" className="relative px-6 md:px-12 py-24 bg-cream border-t border-dark/5 overflow-hidden">
-        <div className="mb-14">
-          <h2 className="font-display text-5xl sm:text-7xl md:text-9xl text-dark leading-none tracking-tight">
-            PERFECT MEAL BUNDLES
-          </h2>
-          <p className="text-dark/70 font-semibold text-xs sm:text-sm leading-relaxed max-w-[440px] mt-4 uppercase tracking-wider">
-            Curated packs built for every craving — solo missions, date nights, and full-squad feasts. Made fresh, every time.
-          </p>
+    <!-- PRODUCT DETAIL HIGHLIGHTS -->
+    <section id="s-product" class="relative flex flex-col items-center justify-center text-center px-6 md:px-12 py-24 bg-cream overflow-hidden">
+      <div class="mb-6 flex flex-col items-center gap-3">
+        <div class="w-16 h-16 rounded-full bg-yellow-primary border-2 border-dark flex items-center justify-center p-1.5 shadow-md">
+          <img src="https://lifeseemsendless.github.io/burger/logo.jpeg" alt="" class="w-full h-full object-cover rounded-full img-upscale" />
         </div>
+        <span class="font-sub text-[10px] tracking-widest text-dark/50 uppercase">Top Classic</span>
+      </div>
+      <h2 class="font-display text-4xl sm:text-6xl md:text-8xl text-red-primary leading-tight tracking-tight max-w-[980px]">
+        JUICY CHEESY<br />FULLY LOADED
+      </h2>
+      <p class="font-sans text-dark/75 font-semibold text-xs sm:text-sm leading-relaxed max-w-[580px] mt-6 uppercase tracking-wider">
+        Billy Boyz is back and bolder than ever. Honouring our rich roots, we bring you the ultimate smashed experience — fully loaded, hot, and crafted fresh.
+      </p>
+      <a href="#s-menu" class="bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full mt-9 transition-colors">Order Now</a>
+    </section>
 
-        {/* Bundle Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 select-none font-bold text-xs">
-          
-          {/* Bundle 1 - Hungry Pack */}
-          <div className="bg-red-primary rounded-3xl p-8 text-white grid grid-cols-1 sm:grid-cols-12 gap-6 relative overflow-hidden shadow-xl hover:-translate-y-1.5 transition-transform duration-300 group">
-            <div className="sm:col-span-8 flex flex-col justify-between h-full">
-              <div>
-                <span className="inline-block bg-dark/15 text-[9px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">
-                  ✦ SOCIAL PACK ✦
-                </span>
-                <h3 className="font-display text-4xl sm:text-5xl text-white tracking-widest leading-none">HUNGRY</h3>
-                <span className="block text-[10px] opacity-60 uppercase mt-4 mb-1">Start From:</span>
-                <span className="font-display text-3xl text-yellow2">$37.9 USD</span>
-                <div className="h-px bg-white/20 my-5" />
-                <span className="block text-[9px] tracking-widest opacity-60 uppercase mb-3">INCLUDE:</span>
-                <ul className="grid grid-cols-2 gap-2 list-none text-[10px] opacity-90 uppercase">
-                  <li className="flex items-center gap-2">✓ Classic Burger</li>
-                  <li className="flex items-center gap-2">✓ Golden Fries</li>
-                  <li className="flex items-center gap-2">✓ Soft Drink</li>
-                  <li className="flex items-center gap-2">✓ Cheese Dip</li>
-                  <li className="flex items-center gap-2">✓ Onion Rings</li>
-                  <li className="flex items-center gap-2">✓ Sauce Set</li>
-                </ul>
-              </div>
-              <button 
-                onClick={() => addToCart('Social Pack Bundle')}
-                className="bg-white hover:bg-dark hover:text-white text-red-primary text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-8 transition-colors cursor-pointer"
-              >
-                Order Now →
-              </button>
-            </div>
-            <div className="sm:col-span-4 w-28 h-28 sm:w-full sm:h-auto aspect-square rounded-full overflow-hidden self-center border-4 border-white/20 shadow-lg justify-self-center">
-              <img src={getAsset('burger2.jpeg')} alt="" className="w-full h-full object-cover img-upscale group-hover:scale-105 transition-transform duration-500" />
-            </div>
-          </div>
-
-          {/* Bundle 2 - Cheese Pack */}
-          <div className="bg-yellow-primary rounded-3xl p-8 text-dark grid grid-cols-1 sm:grid-cols-12 gap-6 relative overflow-hidden shadow-xl hover:-translate-y-1.5 transition-transform duration-300 group">
-            <div className="sm:col-span-8 flex flex-col justify-between h-full">
-              <div>
-                <span className="inline-block bg-dark/10 text-[9px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">
-                  ✦ CRUNCH PACK ✦
-                </span>
-                <h3 className="font-display text-4xl sm:text-5xl text-dark tracking-widest leading-none">CHEESE PACK</h3>
-                <span className="block text-[10px] opacity-65 uppercase mt-4 mb-1">Start From:</span>
-                <span className="font-display text-3xl text-red-primary">$37.9 USD</span>
-                <div className="h-px bg-dark/10 my-5" />
-                <span className="block text-[9px] tracking-widest opacity-65 uppercase mb-3">INCLUDE:</span>
-                <ul className="grid grid-cols-2 gap-2 list-none text-[10px] opacity-90 uppercase">
-                  <li className="flex items-center gap-2">✓ Extra Cheese Burger</li>
-                  <li className="flex items-center gap-2">✓ Golden Fries</li>
-                  <li className="flex items-center gap-2">✓ Regular Fries</li>
-                  <li className="flex items-center gap-2">✓ Free Soft Drink</li>
-                  <li className="flex items-center gap-2">✓ Soft Drink</li>
-                  <li className="flex items-center gap-2">✓ Cheese Dip</li>
-                </ul>
-              </div>
-              <button 
-                onClick={() => addToCart('Cheese Pack Bundle')}
-                className="bg-dark hover:bg-cream hover:text-dark text-yellow-primary text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-8 transition-colors cursor-pointer"
-              >
-                Order Now →
-              </button>
-            </div>
-            <div className="sm:col-span-4 w-28 h-28 sm:w-full sm:h-auto aspect-square rounded-full overflow-hidden self-center border-4 border-dark/10 shadow-lg justify-self-center">
-              <img src={getAsset('burger3.jpeg')} alt="" className="w-full h-full object-cover img-upscale group-hover:scale-105 transition-transform duration-500" />
-            </div>
-          </div>
-
-          {/* Bundle 3 - Big Pizza Pack */}
-          <div className="bg-dark rounded-3xl p-8 text-white relative overflow-hidden shadow-xl hover:-translate-y-1.5 transition-transform duration-300 group col-span-1 lg:col-span-2">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-              <div>
-                <span className="inline-block bg-white/10 text-[9px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">
-                  ✦ PIZZA NIGHT ✦
-                </span>
-                <h3 className="font-display text-4xl sm:text-5xl text-white tracking-widest leading-none">PIZZA PACK</h3>
-                <span className="block text-[10px] opacity-50 uppercase mt-4 mb-2">Start From:</span>
-                <span className="font-display text-3xl text-yellow-primary">$44.9 USD</span>
-                <button 
-                  onClick={() => addToCart('Pizza Pack Bundle')}
-                  className="block bg-yellow-primary hover:bg-white text-dark text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-6 transition-colors cursor-pointer"
-                >
-                  Order Now →
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="block text-[9px] tracking-widest opacity-50 uppercase mb-2">INCLUDED ITEMS:</span>
-                <ul className="flex flex-col gap-2.5 list-none text-[11px] uppercase">
-                  <li className="flex items-center gap-2">✓ Large Double Feast Pizza</li>
-                  <li className="flex items-center gap-2">✓ Golden Sizzled Fries</li>
-                  <li className="flex items-center gap-2">✓ Crispy Garlic Herb Bread</li>
-                  <li className="flex items-center gap-2">✓ 2x Soft Drinks (Coke / Sprite)</li>
-                </ul>
-              </div>
-
-              <div className="flex justify-center">
-                <img 
-                  src={getAsset('burger5.jpeg')} 
-                  alt="" 
-                  className="w-36 h-36 aspect-square rounded-full object-cover img-upscale border-4 border-white/10 shadow-lg group-hover:scale-105 transition-transform duration-500" 
-                />
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* ── SECTION 7: SPECALS TICKER PANEL ── */}
-      <section id="s-specials" className="relative py-24 bg-cream overflow-hidden">
-        <div className="px-6 md:px-12 flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
-          <div>
-            <span className="text-[10px] uppercase font-bold tracking-widest text-red-primary/95 mb-2">✦ Limited Offer Specials</span>
-            <h2 className="font-display text-4xl sm:text-6xl md:text-8xl text-dark leading-none tracking-tight">
-              CHEF'S SPECIALS
-            </h2>
-          </div>
-          <a 
-            href="#" 
-            onClick={(e) => { e.preventDefault(); handleSmoothScroll('#s-menu'); }}
-            className="text-red-primary hover:text-dark font-bold text-xs uppercase tracking-wider border-b-2 border-red-primary/40 hover:border-dark transition-all py-1"
-          >
-            Explore Specials Menu →
-          </a>
-        </div>
-
-        {/* Scrolling Special Marquee Container */}
-        <div className="relative overflow-hidden w-full select-none mt-10">
-          <div className="flex w-[200%] animate-marquee">
-            {Array(2).fill([
-              { name: 'DOUBLE TROUBLE', price: '$7.99', tag: 'Burger', img: 'burger4.jpeg' },
-              { name: 'MUSHROOM BURGER', price: '$10.99', tag: 'Burger', img: 'slid3.jpg' },
-              { name: 'HAWAIIAN BURGER', price: '$12.29', tag: 'Burger', img: 'slid2.jpg' },
-              { name: 'VEGGIE DELIGHT', price: '$5.49', tag: 'Veggie', img: 'shake1.jpg' },
-              { name: 'BBQ BLAST PIZZA', price: '$14.99', tag: 'Pizza', img: 'slid1.jpg' },
-              { name: 'PEPPERONI BEAST', price: '$13.49', tag: 'Pizza', img: 'burger6.jpeg' },
-            ]).flat().map((special, idx) => (
-              <div 
-                key={idx} 
-                onClick={() => addToCart(special.name)}
-                className="w-56 bg-white rounded-2xl overflow-hidden border border-dark/5 p-4 flex flex-col gap-3 mr-6 shrink-0 cursor-pointer shadow-md hover:scale-105 hover:-translate-y-1 transition-all"
-              >
-                <div className="h-32 bg-cream/10 rounded-xl overflow-hidden flex items-center justify-center p-2">
-                  <img src={getAsset(special.img)} alt={special.name} className="max-w-full max-h-full object-contain img-upscale" />
-                </div>
-                <div>
-                  <span className="block text-[8px] uppercase tracking-widest font-black text-red-primary">{special.tag}</span>
-                  <h4 className="font-display text-xs text-dark mt-1 tracking-tight line-clamp-1">{special.name}</h4>
-                  <p className="font-display text-sm text-red-primary mt-2">{special.price} <span className="font-sans text-[8px] text-dark/45 font-bold">/item</span></p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 8: OUR STORY ── */}
-      <section ref={statsSectionRef} id="s-about" className="grid grid-cols-1 lg:grid-cols-2 bg-cream overflow-hidden">
-        <div className="px-6 md:px-16 py-24 flex flex-col justify-center">
-          <span className="text-red-primary font-bold text-xs uppercase tracking-widest mb-6 flex items-center gap-3">
-            <span className="w-8 h-0.5 bg-red-primary" /> Our Story
-          </span>
-          <h2 className="font-display text-5xl sm:text-7xl md:text-8xl text-dark leading-none tracking-tight">
-            BORN ON THE<br /><em className="not-italic text-red-primary">GRILL.</em><br />RAISED ON<br /><em className="not-italic text-red-primary">FLAVOR.</em>
-          </h2>
-          <p className="text-dark/65 font-semibold text-xs sm:text-sm leading-relaxed max-w-[460px] my-8 uppercase tracking-wider">
-            Billy Boyz started with one iron skillet, one insane recipe, and a dream that a great burger could change your whole day. From burgers to our legendary pizzas — every bite is crafted with obsessive attention to quality, fire, and flavor.
-          </p>
-
-          {/* Connected Grid Stats */}
-          <div className="grid grid-cols-3 gap-6 select-none font-bold text-xs">
-            <div>
-              <span className="font-display text-4xl sm:text-5xl text-red-primary leading-none">{stats.locations}+</span>
-              <span className="block text-[9px] uppercase tracking-widest text-dark/40 mt-2 font-black">Locations</span>
-            </div>
-            <div>
-              <span className="font-display text-4xl sm:text-5xl text-red-primary leading-none">{stats.menuItems}+</span>
-              <span className="block text-[9px] uppercase tracking-widest text-dark/40 mt-2 font-black">Menu Items</span>
-            </div>
-            <div>
-              <span className="font-display text-4xl sm:text-5xl text-red-primary leading-none">{stats.satisfaction}%</span>
-              <span className="block text-[9px] uppercase tracking-widest text-dark/40 mt-2 font-black">Satisfaction</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative min-h-[400px] lg:min-h-full">
-          <div className="absolute right-0 top-0 w-[65%] h-[65%] rounded-bl-3xl overflow-hidden shadow-lg border-b-2 border-l-2 border-cream">
-            <img src={getAsset('burger3.jpeg')} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700 img-upscale" />
-          </div>
-          <div className="absolute left-6 bottom-10 w-[38%] h-[38%] rounded-2xl overflow-hidden border-4 border-cream shadow-2xl">
-            <img src={getAsset('burger4.jpeg')} alt="" className="w-full h-full object-cover img-upscale" />
-          </div>
-          <div className="absolute top-[40%] left-[50%] -translate-x-1/2 bg-yellow-primary text-dark font-mono text-[9px] font-extrabold uppercase tracking-widest px-5 py-3 rounded-xl shadow-lg border border-dark/5 z-10">
-            Est. 2018 — Since Day One
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 9: REVIEWS ── */}
-      <section id="s-reviews" className="relative px-6 md:px-12 py-24 bg-red-primary overflow-hidden">
-        {/* Background Decorative Quote Sign */}
-        <span className="absolute font-display text-[40vw] text-black/5 -top-[12%] -left-[3%] leading-none select-none pointer-events-none">
-          "
-        </span>
-
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-8 z-10 relative">
-          <div>
-            <span className="text-white/50 text-[10px] uppercase tracking-widest font-bold block mb-2">✦ What They Say</span>
-            <h2 className="font-display text-5xl sm:text-7xl md:text-9xl text-white tracking-widest leading-none drop-shadow-md">
-              REAL REVIEWS
-            </h2>
-          </div>
-          <div className="text-white">
-            <span className="font-display text-5xl sm:text-6xl text-white">4.9</span>
-            <div className="text-yellow-primary text-sm tracking-widest mt-1">★★★★★</div>
-            <span className="block text-[8px] tracking-wider text-white/50 mt-1 uppercase font-bold">Based on 2,400+ reviews</span>
-          </div>
-        </div>
-
-        {/* Reviews Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
-          {[
-            {
-              text: '"Billy Boyz changed my life. The Double Trouble Burger is the single greatest thing humanity has ever produced. I drive 40 minutes just to eat here."',
-              author: 'JAMES K.',
-              role: 'Regular Customer · Miami, FL',
-              img: 'reviewer1.jpeg'
-            },
-            {
-              text: '"Ordered the Cheese Pack for date night and my partner thought I cooked it myself. That\'s how good this is. The fries deserve a Michelin star."',
-              author: 'SARAH M.',
-              role: 'Food Blogger · NYC',
-              img: 'reviewer2.jpeg'
-            },
-            {
-              text: '"Came for a burger, stayed for the pizza. The BBQ Blast is criminally underrated. Billy Boyz just gets it — quality, speed, and that fire atmosphere."',
-              author: 'MARCUS T.',
-              role: 'Chef · Los Angeles',
-              img: 'reviewer3.jpeg'
-            }
-          ].map((review) => (
-            <div 
-              key={review.author}
-              className="bg-black/15 border border-white/8 rounded-2xl p-6 shadow-md md:hover:-translate-y-1 transition-transform"
-            >
-              <div className="text-yellow-primary text-xs mb-4">★★★★★</div>
-              <p className="text-white/85 text-xs sm:text-sm font-semibold tracking-wide uppercase italic leading-relaxed mb-6">
-                {review.text}
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full border-2 border-yellow-primary overflow-hidden shrink-0">
-                  <img src={getAsset(review.img)} alt="" className="w-full h-full object-cover" />
-                </div>
-                <div>
-                  <span className="block font-bold text-[10px] tracking-wider text-white uppercase">{review.author}</span>
-                  <span className="block text-[8px] text-white/40 font-bold uppercase mt-0.5">{review.role}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── SECTION 10: OUR LOCATIONS ── */}
-      <section id="s-locations" className="px-6 md:px-12 py-24 bg-dark">
-        <span className="text-white/45 text-[10px] uppercase font-bold tracking-widest block mb-2">✦ Find Us</span>
-        <h2 className="font-display text-5xl sm:text-7xl md:text-9xl text-white tracking-widest leading-none mb-14 drop-shadow-sm">
-          OUR LOCATIONS
+    <!-- TRAVEL SECTION -->
+    <section id="s-travel" class="bg-yellow-primary relative flex flex-col lg:flex-row lg:items-center justify-between px-6 md:px-16 py-24 gap-12 overflow-hidden">
+      <div class="max-w-[700px] z-[2]">
+        <h2 class="font-display text-5xl sm:text-7xl md:text-9xl text-white tracking-widest leading-[0.88] drop-shadow-md">
+          QUALITY THAT<br />TRAVELS WITH YOU
         </h2>
+      </div>
+      <div class="max-w-[360px] flex flex-col gap-5 z-[2]">
+        <p class="text-dark/85 font-semibold text-xs sm:text-sm leading-relaxed uppercase tracking-wider">
+          Freshly packed smash burgers, ready to go wherever you crave. From our flat-top to any corner of the city, we ensure every layer stays hot and juicy.
+        </p>
+        <a href="#s-menu" class="w-fit bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full transition-colors">Explore Menu</a>
+      </div>
 
-        {/* Locations Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-bold text-xs select-none">
-          {[
-            { num: '01', city: 'Downtown', address: '123 Main Street, Financial District', hours: 'Mon–Sun: 10AM – 11PM', img: 'location1.jpeg' },
-            { num: '02', city: 'Westside', address: '456 Sunset Blvd, West Hollywood', hours: 'Mon–Sun: 11AM – Midnight', img: 'location2.jpeg' },
-            { num: '03', city: 'Northgate', address: '789 Oak Avenue, Northside Mall', hours: 'Mon–Sun: 10AM – 10PM', img: 'location3.jpeg' }
-          ].map((loc) => (
-            <div 
-              key={loc.num}
-              className="group border border-white/8 rounded-2xl overflow-hidden transition-all duration-300 md:hover:-translate-y-1"
-            >
-              <div className="h-40 overflow-hidden relative">
-                <img src={getAsset(loc.img)} alt={loc.city} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="p-6">
-                <span className="font-display text-4xl text-white/5 block leading-none mb-2">{loc.num}</span>
-                <span className="font-display text-lg text-white block tracking-wider uppercase mb-1.5">{loc.city}</span>
-                <p className="text-white/35 font-semibold text-xs leading-relaxed uppercase tracking-wide mb-4">{loc.address}</p>
-                <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-white/5">
-                  <span className="text-yellow-primary text-[10px] uppercase tracking-wide font-black">{loc.hours}</span>
-                  <span className="bg-emerald-500/15 text-emerald-400 text-[8px] uppercase tracking-widest px-2.5 py-1 rounded-full">Open Now</span>
-                </div>
-              </div>
-            </div>
-          ))}
+      <!-- Travel Photo Rotation Grid with Upscaled Quality images -->
+      <div class="flex gap-4 self-center lg:self-auto mt-6 lg:mt-0 z-[2]">
+        <div class="relative w-36 h-28 sm:w-44 sm:h-36 rounded-2xl overflow-hidden border-4 border-white shadow-xl rotate-[-4deg]">
+          <img src="https://lifeseemsendless.github.io/burger/burger4.jpeg" alt="" class="w-full h-full object-cover img-upscale" />
+          <span class="absolute top-2 left-1/2 -translate-x-1/2 bg-red-primary text-white font-display text-[9px] px-3 py-1 rounded">
+            Downtown
+          </span>
         </div>
-      </section>
+        <div class="relative w-36 h-28 sm:w-44 sm:h-36 rounded-2xl overflow-hidden border-4 border-white shadow-xl rotate-[4deg] mt-6">
+          <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="" class="w-full h-full object-cover img-upscale" />
+          <span class="absolute top-2 left-1/2 -translate-x-1/2 bg-red-primary text-white font-display text-[9px] px-3 py-1 rounded">
+            Westside
+          </span>
+        </div>
+      </div>
+    </section>
 
-      {/* ── SECTION 11: CHEKCOUT ORDER FORM ── */}
-      <section id="s-order" className="relative px-6 md:px-12 py-24 bg-cream overflow-hidden">
-        {/* Background Decorative Graphic */}
-        <span className="absolute right-[-80px] top-1/2 -translate-y-1/2 rotate-90 font-display text-[15vw] text-dark/3 select-none pointer-events-none whitespace-nowrap">
-          ORDER
-        </span>
+    <!-- FEEL THE CHANGE SPLIT SPLASH -->
+    <section id="s-change" class="grid grid-cols-1 md:grid-cols-2 bg-cream overflow-hidden">
+      <div class="relative flex flex-col justify-center px-6 sm:px-12 md:px-16 py-20">
+        <h2 class="font-display text-5xl sm:text-7xl md:text-8xl text-red-primary leading-none tracking-tight">
+          FEEL THE<br />CHANGE
+        </h2>
+        <p class="text-dark/75 font-semibold text-xs sm:text-sm leading-relaxed max-w-[360px] mt-6 mb-8 uppercase tracking-wider">
+          Smashed for the bold, built for the hungry. Dive into a legendary craft experience where every crispy edge and juicy layer rules.
+        </p>
+        <a href="#s-order" class="w-fit bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4.5 rounded-full transition-all">Order Now</a>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center z-10 relative">
-          <div>
-            <span className="text-red-primary text-[10px] uppercase font-bold tracking-widest block mb-2">✦ Skip The Queue</span>
-            <h2 className="font-display text-5xl sm:text-7xl md:text-8xl text-dark leading-none tracking-tight">
-              ORDER ONLINE.
-            </h2>
-            <p className="text-dark/55 font-semibold text-xs sm:text-sm leading-relaxed max-w-[420px] my-6 uppercase tracking-wider">
-              Hot, fresh, and delivered to your door in under 30 minutes. We prep every order to order — no shortcuts, no compromises.
-            </p>
+        <!-- Floating sticker -->
+        <div class="absolute right-[12%] bottom-[12%] w-24 sm:w-32 aspect-square z-10">
+          <img src="https://lifeseemsendless.github.io/burger/slid1.jpg" alt="" class="w-full h-full object-cover rounded-full border-4 border-cream shadow-xl hover:scale-105 transition-transform img-upscale" />
+        </div>
+      </div>
 
-            {/* Step Milestones */}
-            <div className="flex flex-col gap-5 font-bold text-xs">
-              <div className="flex gap-4">
-                <span className="font-display text-4xl text-red-primary leading-none w-10 shrink-0">01</span>
-                <div>
-                  <h4 className="text-xs uppercase tracking-widest text-dark font-black">Pick Your Items</h4>
-                  <p className="text-dark/45 uppercase tracking-wide mt-1 font-semibold text-[10px]">Browse the full menu — burgers, pizza, sides & drinks.</p>
-                </div>
+      <!-- Left High Contrast Splited Image View Box -->
+      <div class="relative min-h-[300px] md:min-h-[500px]">
+        <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="Billy Boyz" class="absolute inset-0 w-full h-full object-cover img-upscale" />
+        <div class="absolute inset-0 bg-gradient-to-r from-cream/30 to-transparent" />
+      </div>
+    </section>
+
+    <!-- INTERACTIVE FILTERABLE MENU SELECTOR GRID -->
+    <section id="s-menu" class="relative px-6 md:px-12 py-24 bg-cream border-t border-dark/5">
+      <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-12 gap-6">
+        <div>
+          <div class="text-[10px] uppercase font-bold tracking-widest text-red-primary/80 mb-2">✦ From Grill to Table</div>
+          <h2 class="font-display text-4xl sm:text-6xl md:text-8xl text-red-primary leading-none tracking-tight">
+            OUR FINEST<br />BURGER PICKS
+          </h2>
+        </div>
+        <div class="text-right">
+          <span class="font-mono text-xs uppercase tracking-widest text-dark/45 font-bold mr-2">
+            8 ITEMS MATCHED ☰
+          </span>
+        </div>
+      </div>
+
+      <!-- Tab Categories Selection list -->
+      <div class="flex flex-wrap items-center gap-2 mb-10">
+        <button onclick="filterCategory('all')" id="tab-all" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer bg-red-primary border-red-primary text-white shadow-md">All Items</button>
+        <button onclick="filterCategory('burger')" id="tab-burger" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary">Burgers</button>
+        <button onclick="filterCategory('pizza')" id="tab-pizza" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary">Pizza</button>
+        <button onclick="filterCategory('sides')" id="tab-sides" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary">Sides</button>
+        <button onclick="filterCategory('drinks')" id="tab-drinks" class="category-tab px-5 py-2.5 rounded-full font-bold text-[11px] uppercase tracking-widest border transition-all cursor-pointer border-dark/15 text-dark/70 hover:border-red-primary hover:text-red-primary">Drinks</button>
+      </div>
+
+      <!-- Product Items Cards Container (JS-interlocked data items) -->
+      <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 select-none">
+        <!-- JS mounts standard product cards here dynamically to ensure perfect filter flow -->
+      </div>
+    </section>
+
+    <!-- PERFECT MEAL BUNDLES -->
+    <section id="s-bundles" class="relative px-6 md:px-12 py-24 bg-cream border-t border-dark/5 overflow-hidden">
+      <div class="mb-14">
+        <h2 class="font-display text-5xl sm:text-7xl md:text-9xl text-dark leading-none tracking-tight">
+          PERFECT MEAL BUNDLES
+        </h2>
+        <p class="text-dark/70 font-semibold text-xs sm:text-sm leading-relaxed max-w-[440px] mt-4 uppercase tracking-wider">
+          Curated packs built for every craving — solo missions, date nights, and full-squad feasts. Made fresh, every time.
+        </p>
+      </div>
+
+      <!-- Bundle cards layout with upscale crisp pictures -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 select-none font-bold text-xs">
+        
+        <!-- Social Pack -->
+        <div class="bg-red-primary rounded-3xl p-8 text-white grid grid-cols-1 sm:grid-cols-12 gap-6 relative overflow-hidden shadow-xl hover:-translate-y-1.5 transition-all duration-300 group">
+          <div class="sm:col-span-8 flex flex-col justify-between h-full">
+            <div>
+              <span class="inline-block bg-dark/15 text-[9px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">
+                ✦ SOCIAL PACK ✦
+              </span>
+              <h3 class="font-display text-4xl sm:text-5xl text-white tracking-widest leading-none">HUNGRY</h3>
+              <span class="block text-[10px] opacity-60 uppercase mt-4 mb-1">Start From:</span>
+              <span class="font-display text-3xl text-yellow2">$37.9 USD</span>
+              <div class="h-px bg-white/20 my-5"></div>
+              <span class="block text-[9px] tracking-widest opacity-60 uppercase mb-3">INCLUDE:</span>
+              <ul class="grid grid-cols-2 gap-2 list-none text-[10px] opacity-90 uppercase">
+                <li>✓ Classic Burger</li>
+                <li>✓ Golden Fries</li>
+                <li>✓ Soft Drink</li>
+                <li>✓ Cheese Dip</li>
+                <li>✓ Onion Rings</li>
+                <li>✓ Sauce Set</li>
+              </ul>
+            </div>
+            <button onclick="addToCartRaw('HUNGRY PACK', 37.9)" class="bg-white hover:bg-dark hover:text-white text-red-primary text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-8 transition-colors">
+              Order Now →
+            </button>
+          </div>
+          <div class="sm:col-span-4 w-28 h-28 sm:w-full sm:h-auto aspect-square rounded-full overflow-hidden self-center border-4 border-white/20 shadow-lg justify-self-center">
+            <img src="https://lifeseemsendless.github.io/burger/burger2.jpeg" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 img-upscale" />
+          </div>
+        </div>
+
+        <!-- Cheese Pack -->
+        <div class="bg-yellow-primary rounded-3xl p-8 text-dark grid grid-cols-1 sm:grid-cols-12 gap-6 relative overflow-hidden shadow-xl hover:-translate-y-1.5 transition-all duration-300 group">
+          <div class="sm:col-span-8 flex flex-col justify-between h-full">
+            <div>
+              <span class="inline-block bg-dark/10 text-[9px] font-bold tracking-widest px-3 py-1 rounded-full uppercase mb-4">
+                ✦ CRUNCH PACK ✦
+              </span>
+              <h3 class="font-display text-4xl sm:text-5xl text-dark tracking-widest leading-none">CHEESE PACK</h3>
+              <span class="block text-[10px] opacity-65 uppercase mt-4 mb-1">Start From:</span>
+              <span class="font-display text-3xl text-red-primary">$37.9 USD</span>
+              <div class="h-px bg-dark/10 my-5"></div>
+              <span class="block text-[9px] tracking-widest opacity-65 uppercase mb-3">INCLUDE:</span>
+              <ul class="grid grid-cols-2 gap-2 list-none text-[10px] opacity-90 uppercase">
+                <li>✓ Extra Cheese Burger</li>
+                <li>✓ Golden Fries</li>
+                <li>✓ Regular Fries</li>
+                <li>✓ Free Soft Drink</li>
+                <li>✓ Soft Drink</li>
+                <li>✓ Cheese Dip</li>
+              </ul>
+            </div>
+            <button onclick="addToCartRaw('CHEESE PACK', 37.9)" class="bg-dark hover:bg-cream hover:text-dark text-yellow-primary text-[10px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full w-fit mt-8 transition-colors">
+              Order Now →
+            </button>
+          </div>
+          <div class="sm:col-span-4 w-28 h-28 sm:w-full sm:h-auto aspect-square rounded-full overflow-hidden self-center border-4 border-dark/10 shadow-lg justify-self-center">
+            <img src="https://lifeseemsendless.github.io/burger/burger3.jpeg" alt="" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 img-upscale" />
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- LIVE CONVERSATIONAL ORDER & TABLE BOOKING FORM -->
+    <section id="s-order" class="relative bg-cream py-24 border-t border-dark/10 px-6 sm:px-12">
+      <div class="max-w-4xl mx-auto bg-dark p-8 sm:p-14 rounded-[32px] text-white relative overflow-hidden shadow-2xl">
+        <div class="relative z-[2]">
+          <span class="bg-white/10 px-4 py-1.5 rounded-full font-mono text-[9px] font-semibold uppercase tracking-widest">
+            ✦ BOOK YOUR EXPERIENCE ✦
+          </span>
+          <h2 class="font-display text-4xl sm:text-6xl text-yellow-primary tracking-widest leading-none mt-5 mb-10">
+            SECURE A TABLE
+          </h2>
+          
+          <form id="booking-form" onsubmit="submitForm(event)" class="flex flex-col gap-8 max-w-[580px]">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div class="flex flex-col gap-2">
+                <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Full Name</label>
+                <input required id="f-name" type="text" placeholder="John Doe" class="bg-transparent border-b border-white/20 focus:border-yellow-primary text-sm font-semibold tracking-wide uppercase py-2 outline-none transition-colors text-white" />
               </div>
-              <div className="flex gap-4">
-                <span className="font-display text-4xl text-red-primary leading-none w-10 shrink-0">02</span>
-                <div>
-                  <h4 className="text-xs uppercase tracking-widest text-dark font-black">Customize It</h4>
-                  <p className="text-dark/45 uppercase tracking-wide mt-1 font-semibold text-[10px]">Extra cheese? No onions? Spicy sauce? Make it yours.</p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <span className="font-display text-4xl text-red-primary leading-none w-10 shrink-0">03</span>
-                <div>
-                  <h4 className="text-xs uppercase tracking-widest text-dark font-black">Fast Delivery</h4>
-                  <p className="text-dark/45 uppercase tracking-wide mt-1 font-semibold text-[10px]">Arrives hot, on time. Track your order live from kitchen to door.</p>
-                </div>
+              <div class="flex flex-col gap-2">
+                <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Phone Number</label>
+                <input required id="f-phone" type="tel" placeholder="+1 123 456 78" class="bg-transparent border-b border-white/20 focus:border-yellow-primary text-sm font-semibold tracking-wide uppercase py-2 outline-none transition-colors text-white" />
               </div>
             </div>
-          </div>
-
-          {/* Checkout Box Container */}
-          <div className="bg-white rounded-3xl p-8 border border-dark/6 shadow-xl relative overflow-hidden max-w-lg mx-auto lg:mr-0">
-            <h3 className="font-display text-2xl text-dark tracking-wide">QUICK ORDER</h3>
-            <p className="text-[10px] uppercase tracking-wider font-bold text-dark/40 mb-6">Fill in below and we'll call you to confirm within minutes.</p>
-            
-            <form onSubmit={handleFormOrderSubmit} className="space-y-4">
-              <div>
-                <label className="block text-[8px] uppercase tracking-widest font-black text-dark/45 mb-1.5 flex items-center gap-1.5"><User className="w-3 h-3 text-red-primary" /> Your Name</label>
-                <input 
-                  type="text" 
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className="w-full bg-cream border border-dark/10 rounded-xl px-4 py-3 font-semibold text-xs tracking-wider uppercase text-dark outline-none focus:border-red-primary transition-colors focus:ring-2 focus:ring-red-primary/10"
-                  placeholder="Billy Smith"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[8px] uppercase tracking-widest font-black text-dark/45 mb-1.5 flex items-center gap-1.5"><Phone className="w-3 h-3 text-red-primary" /> Phone Number</label>
-                  <input 
-                    type="tel" 
-                    value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
-                    className="w-full bg-cream border border-dark/10 rounded-xl px-4 py-3 font-semibold text-xs tracking-wider uppercase text-dark outline-none focus:border-red-primary transition-colors"
-                    placeholder="+1 555 000 0000"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-[8px] uppercase tracking-widest font-black text-dark/45 mb-1.5 flex items-center gap-1.5"><MapPin className="w-3 h-3 text-red-primary" /> Select Location</label>
-                  <select 
-                    value={formLocation}
-                    onChange={(e) => setFormLocation(e.target.value)}
-                    className="w-full bg-cream border border-dark/10 rounded-xl px-4 py-3 font-semibold text-xs tracking-wider uppercase text-dark outline-none focus:border-red-primary transition-colors cursor-pointer"
-                  >
-                    <option>Downtown</option>
-                    <option>Westside</option>
-                    <option>Northgate</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[8px] uppercase tracking-widest font-black text-dark/45 mb-1.5 flex items-center gap-1.5"><UtensilsCrossed className="w-3 h-3 text-red-primary" /> Select Your Meal</label>
-                <select 
-                  value={formMeal}
-                  onChange={(e) => setFormMeal(e.target.value)}
-                  className="w-full bg-cream border border-dark/10 rounded-xl px-4 py-3 font-semibold text-xs tracking-wider uppercase text-dark outline-none focus:border-red-primary transition-colors cursor-pointer"
-                >
-                  <option>Double Trouble Burger</option>
-                  <option>Mushroom Burger</option>
-                  <option>Hawaiian Burger</option>
-                  <option>Veggie Delight</option>
-                  <option>BBQ Blast Pizza</option>
-                  <option>Pepperoni Beast Pizza</option>
-                  <option>Social Pack Bundle</option>
-                  <option>Cheese Pack Bundle</option>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <div class="flex flex-col gap-2">
+                <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Select Location</label>
+                <select id="f-loc" class="bg-dark/50 border-b border-white/20 focus:border-yellow-primary text-xs font-semibold tracking-wide uppercase py-2 outline-none transition-all text-white">
+                  <option value="Downtown">Downtown Branch</option>
+                  <option value="Westside">Westside Branch</option>
+                  <option value="Uptown">Uptown Diner</option>
                 </select>
               </div>
+              <div class="flex flex-col gap-2">
+                <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Your Preferred Burger</label>
+                <select id="f-meal" class="bg-dark/50 border-b border-white/20 focus:border-yellow-primary text-xs font-semibold tracking-wide uppercase py-2 outline-none transition-all text-white">
+                  <option value="Double Trouble Burger">Double Trouble Burger</option>
+                  <option value="Spicy Jalapeño Stuff">Spicy Jalapeño Burger</option>
+                  <option value="Mushroom Smasher">Mushroom Smasher</option>
+                  <option value="Hawaiian Pine Feast">Hawaiian Pine Feast</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex flex-col gap-2">
+              <label class="font-mono text-[9px] uppercase tracking-wider text-white/40">Special Requirements (Optional)</label>
+              <textarea id="f-notes" placeholder="Extra cheese, dietary constraints, gluten-free buns..." class="bg-transparent border-b border-white/20 focus:border-yellow-primary text-xs font-semibold uppercase py-2 outline-none min-h-[60px] max-h-[140px] transition-all text-white"></textarea>
+            </div>
+            
+            <button type="submit" class="w-full bg-yellow-primary hover:bg-white text-dark hover:scale-[1.01] font-black text-xs uppercase tracking-widest py-4.5 rounded-full mt-6 shadow-xl transition-all">
+              Confirm Table Booking
+            </button>
+          </form>
+          
+          <div id="booking-success" class="hidden flex-col items-center justify-center py-10 transition-all duration-500">
+            <i data-lucide="utensils-crossed" class="w-12 h-12 text-yellow-primary animate-bounce mb-4"></i>
+            <h3 class="font-display text-2xl text-yellow-primary tracking-wider uppercase">BOOKING CONFIRMED</h3>
+            <p id="success-preview-text" class="text-xs uppercase font-sub font-normal text-white/80 mt-2 text-center max-w-[380px]">Your spot is locked at Billy Boyz.</p>
+            <button onclick="resetBookingForm()" class="bg-white/10 hover:bg-white/20 text-white font-mono text-[9px] font-bold uppercase tracking-widest px-6 py-3.5 rounded-full mt-8 transition-colors">Book Another Table</button>
+          </div>
+        </div>
+      </div>
+    </section>
 
-              <div>
-                <label className="block text-[8px] uppercase tracking-widest font-black text-dark/45 mb-1.5 flex items-center gap-1.5"><MessageSquare className="w-3 h-3 text-red-primary" /> Special Requests</label>
-                <input 
-                  type="text" 
-                  value={formNotes}
-                  onChange={(e) => setFormNotes(e.target.value)}
-                  className="w-full bg-cream border border-dark/10 rounded-xl px-4 py-3 font-semibold text-xs tracking-wider uppercase text-dark outline-none focus:border-red-primary transition-colors"
-                  placeholder="Extra sauce, no pickles..."
-                />
+    <!-- FOOTER --->
+    <footer class="bg-dark text-white py-14 px-6 md:px-12 border-t border-white/5">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <span class="font-display text-xl text-red-primary tracking-widest">BILLY BOYZ</span>
+        <p class="font-mono text-[9px] tracking-widest uppercase text-white/40">© 2026 Billy Boyz Smashed Burgers Corp.</p>
+      </div>
+    </footer>
+
+    <!-- INTERACTIVE MOUNTS & WEBGL PIPELINING CORE -->
+    <script>
+      // PRODUCT MENU ITEMS DATA
+      const MENU_ITEMS = [
+        { name: 'CLASSIC BURGER', desc: 'Smash patty, brioche bun, house sauce', price: '$16.00', numPrice: 16.00, category: 'burger', bun: 'BRIOCHE', patty: 'BEEF', spice: 'MILD', protein: '51g', img: 'burger1.jpeg' },
+        { name: 'SPICY JALAPEÑO', desc: 'Jalapeño, pepper jack, chipotle aioli', price: '$18.00', numPrice: 18.00, category: 'burger', bun: 'BRIOCHE', patty: 'BEEF', spice: 'HOT', protein: '53g', img: 'burger2.jpeg' },
+        { name: 'MUSHROOM BURGER', desc: 'Crispy mushroom, truffle aioli, sesame bun', price: '$10.99', numPrice: 10.99, category: 'burger', bun: 'SESAME', patty: 'BEEF', spice: 'MILD', protein: '47g', img: 'burger3.jpeg' },
+        { name: 'HAWAIIAN BURGER', desc: 'Pineapple glaze, teriyaki, sesame bun', price: '$12.29', numPrice: 12.29, category: 'burger', bun: 'SESAME', patty: 'BEEF', spice: 'MILD', protein: '50g', img: 'burger4.jpeg' },
+        { name: 'BBQ BLAST PIZZA', desc: 'Smoky BBQ base, pulled pork, jalapeño', price: '$14.99', numPrice: 14.99, category: 'pizza', bun: '—', patty: '—', spice: 'MED', protein: '60g', img: 'burger5.jpeg' },
+        { name: 'PEPPERONI BEAST', desc: 'Triple pepperoni, mozzarella, chilli oil', price: '$13.49', numPrice: 13.49, category: 'pizza', bun: '—', patty: '—', spice: 'HOT', protein: '58g', img: 'burger6.jpeg' },
+        { name: 'GOLDEN FRIES', desc: 'Sea salt, rosemary, truffle option', price: '$3.99', numPrice: 3.99, category: 'sides', bun: '—', patty: '—', spice: 'NONE', protein: '5g', img: 'burger7.jpeg' },
+        { name: 'FROSTED SHAKE', desc: 'Vanilla, chocolate or strawberry', price: '$4.49', numPrice: 4.49, category: 'drinks', bun: '—', patty: '—', spice: 'NONE', protein: '8g', img: 'slid1.jpg' }
+      ];
+
+      let CART = [];
+
+      // INITIALIZE LUCIDE ICONS
+      window.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        renderMenuCards('all');
+        setupPageLoader();
+        setupWebGLChroma();
+        setupEventListeners();
+      });
+
+      // PAGE LOADER TIMING
+      function setupPageLoader() {
+        setTimeout(() => {
+          const loader = document.getElementById('page-loader');
+          loader.style.opacity = '0';
+          loader.style.pointerEvents = 'none';
+        }, 1100);
+      }
+
+      // NAV VISUAL SCROLL FEEDBACK
+      window.addEventListener('scroll', () => {
+        const header = document.getElementById('nav-header');
+        if (window.scrollY > 50) {
+          header.classList.add('bg-cream/95', 'backdrop-blur-md', 'shadow-md', 'py-4.5 border-b border-dark/5');
+          header.classList.remove('py-6');
+        } else {
+          header.classList.remove('bg-cream/95', 'backdrop-blur-md', 'shadow-md', 'py-4.5 border-b border-dark/5');
+          header.classList.add('py-6');
+        }
+      });
+
+      // RENDER INTUITIVE INTERACTIVE MENU CARDS
+      function renderMenuCards(filteredCategory) {
+        const grid = document.getElementById('menu-grid');
+        grid.innerHTML = '';
+        
+        const filtered = filteredCategory === 'all' 
+          ? MENU_ITEMS 
+          : MENU_ITEMS.filter(it => it.category === filteredCategory);
+
+        filtered.forEach(item => {
+          const card = document.createElement('div');
+          card.className = "group bg-white rounded-2xl overflow-hidden border border-dark/5 shadow-md flex flex-col justify-between transition-all duration-300 relative hover:shadow-xl";
+          
+          card.innerHTML = `
+            <div class="relative overflow-hidden bg-cream/30 h-44 flex items-center justify-center p-4">
+              <img 
+                src="https://lifeseemsendless.github.io/burger/${item.img}" 
+                alt="${item.name}" 
+                class="w-[75%] h-full object-contain transform group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-500 img-upscale" 
+              />
+              
+              <!-- Custom Hover Overlay Stats -->
+              <div class="absolute inset-x-0 bottom-0 bg-white/95 backdrop-blur-xs border-t border-dark/5 p-3 flex justify-between items-center text-[8px] uppercase font-bold tracking-widest text-dark/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div>
+                  <span class="block text-[6px] text-dark/30">BUN</span>
+                  <span class="text-dark font-black">${item.bun}</span>
+                </div>
+                <div>
+                  <span class="block text-[6px] text-dark/30">PATTY</span>
+                  <span class="text-dark font-black">${item.patty}</span>
+                </div>
+                <div>
+                  <span class="block text-[6px] text-dark/30">PROTEIN</span>
+                  <span class="text-dark font-black">${item.protein}</span>
+                </div>
               </div>
 
-              <button 
-                type="submit"
-                className={`w-full font-bold text-xs uppercase tracking-widest py-4.5 rounded-full mt-2 transition-all cursor-pointer ${
-                  formSubmitted 
-                    ? 'bg-emerald-500 text-white' 
-                    : 'bg-red-primary text-white hover:bg-dark hover:scale-101 active:scale-100'
-                }`}
-              >
-                {formSubmitted ? "Order Placed! We'll call soon ✓" : "Place Order Now"}
+              <button onclick="addToCartRaw('${item.name}', ${item.numPrice})" class="absolute top-3 right-3 bg-yellow-primary text-dark font-black text-sm w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-md shadow-dark/10 hover:bg-red-primary hover:text-white hover:rotate-90 transition-all duration-300">
+                +
               </button>
-            </form>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer className="bg-dark px-6 md:px-12 pt-20 pb-10 border-t border-white/5">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 select-none font-bold text-xs uppercase">
-          <div>
-            <a href="#" className="font-display text-3xl text-white tracking-widest hover:text-yellow-primary transition-colors">
-              BILLY <span className="text-white">BOYZ</span>
-            </a>
-            <p className="text-white/35 font-semibold text-xs leading-relaxed uppercase tracking-wider mt-4">
-              Bigger. Juicier. Better. Feeding the city's hunger since 2018 — one legendary burger at a time.
-            </p>
-            <div className="flex gap-2.5 mt-6">
-              {['FB', 'TK', 'IG', 'YT'].map((sc) => (
-                <a 
-                  key={sc} 
-                  href="#" 
-                  className="w-9 h-9 rounded-xl bg-white/5 hover:bg-red-primary text-white/50 hover:text-white flex items-center justify-center border border-white/8 transition-colors"
-                >
-                  {sc}
-                </a>
-              ))}
             </div>
-          </div>
 
-          <div>
-            <h4 className="font-sub text-[10px] tracking-widest text-yellow-primary mb-5">Menu</h4>
-            <ul className="space-y-3 list-none">
-              {['Burgers', 'Pizzas', 'Sides', 'Drinks', 'Bundles'].map((m) => (
-                <li key={m}><a href="#" className="text-white/35 hover:text-white text-[10px] tracking-wider transition-colors">{m}</a></li>
-              ))}
-            </ul>
-          </div>
+            <div class="p-5 flex-1 flex flex-col justify-between">
+              <div>
+                <h4 class="font-display text-base text-red-primary tracking-wide">${item.name}</h4>
+                <p class="text-xs text-dark/60 font-semibold tracking-wide uppercase line-clamp-2 mt-1.5">${item.desc}</p>
+              </div>
+              <div class="flex items-center justify-between mt-5 pt-3 border-t border-dark/5">
+                <span class="font-display text-lg text-dark">${item.price}</span>
+                <button onclick="addToCartRaw('${item.name}', ${item.numPrice})" class="bg-red-primary hover:bg-dark text-white font-bold text-[10px] uppercase tracking-widest px-4 py-2 rounded-full cursor-pointer transition-colors">
+                  Add
+                </button>
+              </div>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
 
-          <div>
-            <h4 className="font-sub text-[10px] tracking-widest text-yellow-primary mb-5">Company</h4>
-            <ul className="space-y-3 list-none">
-              {['About Us', 'Careers', 'Locations', 'Franchise', 'Press'].map((m) => (
-                <li key={m}><a href="#" className="text-white/35 hover:text-white text-[10px] tracking-wider transition-colors">{m}</a></li>
-              ))}
-            </ul>
-          </div>
+      // CATEGORY TAB SWITCHER
+      function filterCategory(cat) {
+        document.querySelectorAll('.category-tab').forEach(tab => {
+          tab.classList.remove('bg-red-primary', 'border-red-primary', 'text-white', 'shadow-md');
+          tab.classList.add('border-dark/15', 'text-dark/70');
+        });
+        const activeTab = document.getElementById(`tab-${cat}`);
+        activeTab.classList.add('bg-red-primary', 'border-red-primary', 'text-white', 'shadow-md');
+        activeTab.classList.remove('border-dark/15', 'text-dark/70');
+        renderMenuCards(cat);
+      }
 
-          <div>
-            <h4 className="font-sub text-[10px] tracking-widest text-yellow-primary mb-5">Contact</h4>
-            <ul className="space-y-3 list-none font-sans font-semibold tracking-wide normal-case text-white/35">
-              <li><a href="mailto:hello@billyboyz.com" className="hover:text-white text-[10px] tracking-wider uppercase transition-colors">hello@billyboyz.com</a></li>
-              <li className="text-[10px] tracking-wider uppercase">+1 (800) BILLY-BZ</li>
-              <li><a href="#" className="hover:text-white text-[10px] tracking-wider uppercase transition-colors">Instagram</a></li>
-              <li><a href="#" className="hover:text-white text-[10px] tracking-wider uppercase transition-colors">TikTok</a></li>
-            </ul>
-          </div>
-        </div>
+      // LAUNCH CHROMACANVAS WEBGL PIPELINE WITH INTEGRATED CONTRAST UPSCALER
+      function setupWebGLChroma() {
+        const video = document.getElementById('hero-video-ref');
+        const canvas = document.getElementById('chroma-canvas');
+        if (!video || !canvas) return;
 
-        <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-white/5 font-sans font-semibold tracking-wide normal-case text-white/20 text-[10px] uppercase gap-4 text-center">
-          <p>© 2026 Billy Boyz. All rights reserved.</p>
-          <p className="flex items-center gap-1">
-            Made with <Heart className="w-3 h-3 text-red-primary fill-red-primary" /> and a lot of hot sauce.
-          </p>
-        </div>
-      </footer>
+        let gl;
+        try {
+          gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: true });
+        } catch (e) {
+          console.warn("WebGL failure.");
+        }
 
-      {/* ── INTERACTIVE VIDEO MODAL STORY overlay ── */}
-      <AnimatePresence>
-        {videoModalOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={(e) => { if (e.target === e.currentTarget) setVideoModalOpen(false); }}
-            className="fixed inset-0 z-[99998] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-4xl aspect-video bg-dark rounded-3xl overflow-hidden shadow-2xl border border-white/10"
-            >
-              <video 
-                src={getAsset('promo.mp4')} 
-                controls 
-                autoPlay 
-                playsInline
-                className="w-full h-full object-cover"
-              />
-              <button 
-                onClick={() => setVideoModalOpen(false)}
-                className="absolute top-4 right-4 bg-black/60 hover:bg-red-primary text-white w-10 h-10 rounded-full flex items-center justify-center cursor-pointer border border-white/10 transition-colors"
-                aria-label="Close video"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        if (!gl) {
+          // Soft blending fallback inside CSS
+          video.classList.remove('opacity-0', 'absolute', 'w-1', 'h-1');
+          video.classList.add('w-full', 'h-full', 'mix-blend-color-dodge');
+          canvas.style.display = 'none';
+          return;
+        }
 
-    </div>
-  );
-}
+        // Compliant Shaders
+        const vsSource = `
+          attribute vec2 position;
+          varying vec2 vTexCoord;
+          void main() {
+            vTexCoord = vec2(position.x * 0.5 + 0.5, 0.5 - position.y * 0.5);
+            gl_Position = vec4(position, 0.0, 1.0);
+          }
+        `;
+
+        const fsSource = `
+          precision mediump float;
+          varying vec2 vTexCoord;
+          uniform sampler2D uTexture;
+          uniform float uSimilarity;
+          uniform float uSmoothness;
+
+          float computeAlpha(vec4 col, vec2 coord, float sim, float smoothVal) {
+            float luma = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+            float maxCol = max(col.r, max(col.g, col.b));
+            float minCol = min(col.r, min(col.g, col.b));
+            float chroma = maxCol - minCol;
+            
+            float blackness = max(luma, maxCol * 0.85);
+            float alpha = smoothstep(sim, sim + smoothVal, blackness);
+            
+            // Protect solid brand colors (like tomato red, lettuce green, golden cheese/bun) from keying out.
+            // We raise the chroma requirement threshold (0.12 to 0.22) and blackness threshold (0.06 to 0.16)
+            // to avoid protecting low-intensity border compression noise!
+            float chromaProtect = smoothstep(0.12, 0.22, chroma);
+            alpha = max(alpha, chromaProtect * smoothstep(0.06, 0.16, blackness));
+            
+            float fadeX = smoothstep(0.0, 0.04, coord.x) * smoothstep(1.0, 0.96, coord.x);
+            float fadeY = smoothstep(0.0, 0.04, coord.y) * smoothstep(1.0, 0.96, coord.y);
+            alpha *= (fadeX * fadeY);
+            
+            // Slightly choke the edges (using smoothstep 0.25 to 0.90) to chop off the dark pixel halo of compression artifacts
+            return smoothstep(0.25, 0.90, alpha);
+          }
+
+          vec3 unpremultiply(vec4 color, float alpha) {
+            // Smoothly taper off the division to avoid boosting low-alpha noise
+            float factor = smoothstep(0.08, 0.38, alpha);
+            float divisor = mix(1.0, alpha, factor);
+            return color.rgb / max(divisor, 0.08);
+          }
+
+          void main() {
+            vec4 color = texture2D(uTexture, vTexCoord);
+            float alpha = computeAlpha(color, vTexCoord, uSimilarity, uSmoothness);
+
+            // GPU detail unsharp mask sharpener
+            float stepX = 1.0 / 640.0;
+            float stepY = 1.0 / 640.0;
+             
+            vec2 coordL = vec2(vTexCoord.x - stepX, vTexCoord.y);
+            vec2 coordR = vec2(vTexCoord.x + stepX, vTexCoord.y);
+            vec2 coordU = vec2(vTexCoord.x, vTexCoord.y + stepY);
+            vec2 coordD = vec2(vTexCoord.x, vTexCoord.y - stepY);
+
+            vec4 leftColor  = texture2D(uTexture, coordL);
+            vec4 rightColor = texture2D(uTexture, coordR);
+            vec4 upColor    = texture2D(uTexture, coordU);
+            vec4 downColor  = texture2D(uTexture, coordD);
+
+            float alphaL = computeAlpha(leftColor, coordL, uSimilarity, uSmoothness);
+            float alphaR = computeAlpha(rightColor, coordR, uSimilarity, uSmoothness);
+            float alphaU = computeAlpha(upColor, coordU, uSimilarity, uSmoothness);
+            float alphaD = computeAlpha(downColor, coordD, uSimilarity, uSmoothness);
+
+            vec3 centerRgb = unpremultiply(color, alpha);
+            vec3 leftRgb   = unpremultiply(leftColor, alphaL);
+            vec3 rightRgb  = unpremultiply(rightColor, alphaR);
+            vec3 upRgb     = unpremultiply(upColor, alphaU);
+            vec3 downRgb   = unpremultiply(downColor, alphaD);
+
+            vec3 neighborMean = (leftRgb + rightRgb + upRgb + downRgb) * 0.25;
+            vec3 sharpRgb = centerRgb + (centerRgb - neighborMean) * 0.7;
+            vec3 upscaledRgb = mix(centerRgb, sharpRgb, 0.85);
+
+            float rawLuma = dot(upscaledRgb, vec3(0.299, 0.587, 0.114));
+            upscaledRgb = mix(vec3(rawLuma), upscaledRgb, 1.25); // saturating
+            upscaledRgb = (upscaledRgb - 0.5) * 1.08 + 0.51;
+            upscaledRgb = clamp(upscaledRgb, 0.0, 1.0);
+
+            // PREMULTIPLIED ALPHA OUTPUT: Solves dark edge blending issues perfectly
+            gl_FragColor = vec4(upscaledRgb * alpha, alpha);
+          }
+        `;
+
+        const loadShader = (type, source) => {
+          const shader = gl.createShader(type);
+          gl.shaderSource(shader, source);
+          gl.compileShader(shader);
+          return shader;
+        };
+
+        const vs = loadShader(gl.VERTEX_SHADER, vsSource);
+        const fs = loadShader(gl.FRAGMENT_SHADER, fsSource);
+        const program = gl.createProgram();
+        gl.attachShader(program, vs);
+        gl.attachShader(program, fs);
+        gl.linkProgram(program);
+        gl.useProgram(program);
+
+        const vertices = new Float32Array([
+          -1, -1,  1, -1, -1,  1,
+          -1,  1,  1, -1,  1,  1,
+        ]);
+
+        const vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+        const posLoc = gl.getAttribLocation(program, 'position');
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+        gl.uniform1f(gl.getUniformLocation(program, 'uSimilarity'), 0.05);
+        gl.uniform1f(gl.getUniformLocation(program, 'uSmoothness'), 0.08);
+
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        function render() {
+          if (video.readyState >= video.HAVE_CURRENT_DATA) {
+            const w = video.videoWidth;
+            const h = video.videoHeight;
+            if (canvas.width !== w || canvas.height !== h) {
+              canvas.width = w;
+              canvas.height = h;
+              gl.viewport(0, 0, w, h);
+            }
+            gl.clearColor(0,0,0,0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            try {
+              gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+            } catch (err) {
+              // Safety CORS callback
+              video.classList.remove('opacity-0', 'absolute');
+              video.classList.add('w-full', 'h-full', 'mix-blend-color-dodge');
+              canvas.style.display = 'none';
+              return;
+            }
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+          }
+          requestAnimationFrame(render);
+        }
+
+        video.addEventListener('playing', render);
+        if (!video.paused) {
+          render();
+        }
+      }
+
+      // INTERACTIVE TOAST
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        const textElement = document.getElementById('toast-text');
+        textElement.innerText = msg;
+        
+        toast.className = "fixed bottom-6 right-6 z-[100] transform translate-y-0 opacity-100 transition-all duration-300";
+        setTimeout(() => {
+          toast.className = "fixed bottom-6 right-6 z-[100] transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300";
+        }, 2200);
+      }
+
+      // CART MANAGEMENT ENGINE
+      function addToCartRaw(name, price) {
+        const itemIndex = CART.findIndex(it => it.name === name);
+        if (itemIndex > -1) {
+          CART[itemIndex].qty += 1;
+        } else {
+          CART.push({ name, price, qty: 1 });
+        }
+        updateCartUi();
+        showToast(`ADDED ${name} TO CART`);
+      }
+
+      function updateCartUi() {
+        const badge = document.getElementById('cart-count-badge');
+        const emptyMsg = document.getElementById('empty-cart-message');
+        const list = document.getElementById('cart-items-list');
+        const totalText = document.getElementById('cart-subtotal');
+
+        const totalItemsCount = CART.reduce((acc, sum) => acc + sum.qty, 0);
+        
+        if (totalItemsCount > 0) {
+          badge.innerText = totalItemsCount;
+          badge.classList.remove('scale-0');
+          badge.classList.add('scale-100');
+          emptyMsg.style.display = 'none';
+        } else {
+          badge.classList.add('scale-0');
+          badge.classList.remove('scale-100');
+          emptyMsg.style.display = 'block';
+        }
+
+        // Render card items
+        list.innerHTML = '';
+        if (totalItemsCount === 0) {
+          list.appendChild(emptyMsg);
+        } else {
+          let sumCost = 0;
+          CART.forEach((item, idx) => {
+            sumCost += (item.price * item.qty);
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center bg-cream/15 p-4 rounded-xl border border-dark/5";
+            div.innerHTML = `
+              <div>
+                <h5 class="font-bold text-[11px] uppercase tracking-wider text-dark">${item.name}</h5>
+                <span class="block text-[10px] text-red-primary font-bold mt-1">$${item.price.toFixed(2)} x ${item.qty}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="changeQty(${idx}, -1)" class="w-6 h-6 rounded-full border border-dark/10 flex items-center justify-center font-bold text-xs">-</button>
+                <button onclick="changeQty(${idx}, 1)" class="w-6 h-6 rounded-full border border-dark/10 flex items-center justify-center font-bold text-xs">+</button>
+              </div>
+            `;
+            list.appendChild(div);
+          });
+          totalText.innerText = `$${sumCost.toFixed(2)}`;
+        }
+      }
+
+      function changeQty(index, amt) {
+        CART[index].qty += amt;
+        if (CART[index].qty <= 0) {
+          CART.splice(index, 1);
+        }
+        updateCartUi();
+      }
+
+      // DRAWER SYSTEMS Setup
+      function setupEventListeners() {
+        // Mobile navigation triggers
+        const trigger = document.getElementById('mobile-menu-trigger');
+        const drawer = document.getElementById('mobile-drawer');
+        const closeBtn = document.getElementById('mobile-drawer-close');
+
+        trigger.addEventListener('click', () => {
+          drawer.classList.remove('opacity-0', 'pointer-events-none');
+          drawer.children[0].classList.remove('translate-x-full');
+        });
+
+        const closeMobile = () => {
+          drawer.classList.add('opacity-0', 'pointer-events-none');
+          drawer.children[0].classList.add('translate-x-full');
+        };
+
+        closeBtn.addEventListener('click', closeMobile);
+        document.querySelectorAll('.mobile-nav-link').forEach(link => {
+          link.addEventListener('click', closeMobile);
+        });
+
+        // Cart drawer triggers
+        const cartTrigger = document.getElementById('cart-trigger');
+        const cartDrawer = document.getElementById('cart-drawer');
+        const cartClose = document.getElementById('cart-drawer-close');
+
+        cartTrigger.addEventListener('click', () => {
+          cartDrawer.classList.remove('opacity-0', 'pointer-events-none');
+          cartDrawer.children[0].classList.remove('translate-x-full');
+        });
+
+        const closeCart = () => {
+          cartDrawer.classList.add('opacity-0', 'pointer-events-none');
+          cartDrawer.children[0].classList.add('translate-x-full');
+        };
+
+        cartClose.addEventListener('click', closeCart);
+        document.getElementById('cart-checkout-btn').addEventListener('click', () => {
+          if (CART.length === 0) {
+            showToast('YOUR CART IS EMPTY');
+            return;
+          }
+          closeCart();
+          showToast('PROCEEDING SPECULATIVE CHECKOUT...');
+          setTimeout(() => {
+            document.getElementById('s-order').scrollIntoView({ behavior: 'smooth' });
+          }, 400);
+        });
+
+        // Watch Story action
+        document.getElementById('play-video-story').addEventListener('click', () => {
+          showToast('OPENING STORY MODE...');
+          const vid = document.getElementById('hero-video-ref');
+          if (vid) {
+            vid.muted = false;
+            vid.currentTime = 0;
+            vid.play();
+          }
+        });
+      }
+
+      // TABLE BOOKING FORM CONTROLLER
+      function submitForm(e) {
+        e.preventDefault();
+        const n = document.getElementById('f-name').value;
+        const p = document.getElementById('f-phone').value;
+        const l = document.getElementById('f-loc').value;
+        const m = document.getElementById('f-meal').value;
+
+        document.getElementById('booking-form').style.display = 'none';
+        
+        const success = document.getElementById('booking-success');
+        success.style.display = 'flex';
+        document.getElementById('success-preview-text').innerText = `Hey ${n}, we've booked a nice table for you at our ${l} diner! Premium ${m} prep is locked in!`;
+
+        showToast('TABLE BOOKING SUCCESS');
+      }
+
+      function resetBookingForm() {
+        document.getElementById('booking-form').reset();
+        document.getElementById('booking-form').style.display = 'flex';
+        document.getElementById('booking-success').style.display = 'none';
+      }
+    </script>
+  </body>
+</html>
