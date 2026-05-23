@@ -370,7 +370,7 @@
           <img 
             src="https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&q=85&w=800" 
             alt="Billy Boyz Craft Burger" 
-            class="w-full h-full object-contain img-upscale" 
+            class="w-full h-full object-cover img-upscale" 
           />
         </div>
       </div>
@@ -630,11 +630,11 @@
           card.className = "group bg-white rounded-2xl overflow-hidden border border-dark/5 shadow-md flex flex-col justify-between transition-all duration-300 relative hover:shadow-xl";
           
           card.innerHTML = `
-            <div class="relative overflow-hidden bg-cream/30 h-44 flex items-center justify-center p-4">
+            <div class="relative overflow-hidden bg-cream/30 h-44 w-full">
               <img 
                 src="${getAsset(item.img)}" 
                 alt="${item.name}" 
-                class="w-[75%] h-full object-contain transform group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-500 img-upscale" 
+                class="w-full h-full object-cover transform group-hover:scale-105 transition-all duration-500 img-upscale" 
               />
               
               <!-- Custom Hover Overlay Stats -->
