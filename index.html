@@ -203,7 +203,7 @@
         <div class="relative w-full h-full flex items-center justify-center">
           <video
             id="hero-video-ref"
-            src="https://lifeseemsendless.github.io/burger/burgerexp.mp4"
+            src="https://lifeseemsendless.github.io/burger/burgerbg.mp4"
             autoplay
             muted
             playsinline
@@ -703,7 +703,7 @@
         if (!gl) {
           // Soft blending fallback inside CSS
           video.classList.remove('opacity-0', 'absolute', 'w-1', 'h-1');
-          video.classList.add('w-full', 'h-full', 'mix-blend-color-dodge');
+          video.classList.add('w-full', 'h-full', 'mix-blend-multiply');
           canvas.style.display = 'none';
           return;
         }
@@ -726,26 +726,39 @@
           uniform float uSmoothness;
 
           float computeAlpha(vec4 col, vec2 coord, float sim, float smoothVal) {
+            float sum = col.r + col.g + col.b + 0.001;
+            vec3 chrom = col.rgb / sum;
+
+            // Target chromaticity of typical cream/off-white background
+            // F0E6D3 -> r: 0.352, g: 0.338, b: 0.310
+            // FAF6EE -> r: 0.341, g: 0.335, b: 0.324
+            vec3 targetChrom = vec3(0.348, 0.336, 0.316);
+
+            float chromDist = distance(chrom, targetChrom);
             float luma = dot(col.rgb, vec3(0.299, 0.587, 0.114));
+
+            // High chromDist means NOT cream of the background (so keep it).
+            // Low chromDist means cream (so transparent it).
+            float alpha = smoothstep(sim, sim + smoothVal, chromDist);
+
+            // Protect very dark elements (like meat patty grill marks / shadows on burger)
+            float lumaProtect = smoothstep(0.12, 0.42, luma);
+            alpha = mix(1.0, alpha, lumaProtect);
+
+            // Protect highly saturated brand colors (lettuce green, cheese yellow, tomato red)
             float maxCol = max(col.r, max(col.g, col.b));
             float minCol = min(col.r, min(col.g, col.b));
-            float chroma = maxCol - minCol;
-            
-            float blackness = max(luma, maxCol * 0.85);
-            float alpha = smoothstep(sim, sim + smoothVal, blackness);
-            
-            // Protect solid brand colors (like tomato red, lettuce green, golden cheese/bun) from keying out.
-            // We raise the chroma requirement threshold (0.12 to 0.22) and blackness threshold (0.06 to 0.16)
-            // to avoid protecting low-intensity border compression noise!
-            float chromaProtect = smoothstep(0.12, 0.22, chroma);
-            alpha = max(alpha, chromaProtect * smoothstep(0.06, 0.16, blackness));
-            
+            float saturation = (maxCol - minCol) / max(maxCol, 0.001);
+            float satProtect = smoothstep(0.15, 0.35, saturation) * smoothstep(0.1, 0.3, luma);
+            alpha = max(alpha, satProtect);
+
+            // Border fading
             float fadeX = smoothstep(0.0, 0.04, coord.x) * smoothstep(1.0, 0.96, coord.x);
             float fadeY = smoothstep(0.0, 0.04, coord.y) * smoothstep(1.0, 0.96, coord.y);
             alpha *= (fadeX * fadeY);
-            
-            // Slightly choke the edges (using smoothstep 0.25 to 0.90) to chop off the dark pixel halo of compression artifacts
-            return smoothstep(0.25, 0.90, alpha);
+
+            // Slightly choke the edges to clear compression artifacts
+            return smoothstep(0.20, 0.85, alpha);
           }
 
           vec3 unpremultiply(vec4 color, float alpha) {
@@ -853,7 +866,7 @@
             } catch (err) {
               // Safety CORS callback
               video.classList.remove('opacity-0', 'absolute');
-              video.classList.add('w-full', 'h-full', 'mix-blend-color-dodge');
+              video.classList.add('w-full', 'h-full', 'mix-blend-multiply');
               canvas.style.display = 'none';
               return;
             }
