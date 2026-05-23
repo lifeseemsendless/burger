@@ -85,10 +85,20 @@
     <div id="page-loader" class="fixed inset-0 z-[999] bg-dark flex flex-col items-center justify-center transition-all duration-700 ease-out">
       <div class="relative flex flex-col items-center">
         <h1 class="font-display text-4xl sm:text-6xl text-white bg-red-primary px-6 py-2 rounded-full shadow-lg border-2 border-dark/20 tracking-wider animate-bounce select-none">BILLY BOYZ</h1>
-        <div class="w-48 h-1 bg-white/10 rounded-full mt-6 overflow-hidden relative">
-          <div class="absolute inset-y-0 left-0 bg-yellow-primary w-2/3 rounded-full animate-pulse"></div>
+        <div id="loader-progress-container" class="flex flex-col items-center mt-6">
+          <div class="w-48 h-1 bg-white/10 rounded-full overflow-hidden relative">
+            <div id="loader-progress-bar" style="width: 10%;" class="absolute inset-y-0 left-0 bg-yellow-primary rounded-full transition-all duration-300"></div>
+          </div>
+          <p class="text-white/40 font-mono text-[9px] uppercase tracking-widest mt-3 animate-pulse">Initializing GPU Sharpener...</p>
         </div>
-        <p class="text-white/40 font-mono text-[9px] uppercase tracking-widest mt-3 animate-pulse">Initializing GPU Sharpener...</p>
+        
+        <button 
+          id="enter-btn" 
+          style="display: none;" 
+          class="mt-6 bg-red-primary hover:bg-yellow-primary hover:text-dark text-white px-8 py-3.5 rounded-full font-display text-xs tracking-widest font-bold uppercase transition-all duration-300 shadow-xl shadow-red-primary/20 border-none scale-100 animate-pulse cursor-pointer"
+        >
+          Enter Restaurant
+        </button>
       </div>
     </div>
 
@@ -99,6 +109,15 @@
         <span id="toast-text">ADDED TO CART</span>
       </div>
     </div>
+
+    <!-- BACKGROUND MUSIC CONTROL -->
+    <button 
+      id="bgm-toggle" 
+      class="fixed bottom-6 left-6 z-[100] bg-cream/90 backdrop-blur border border-dark/10 text-dark w-12 h-12 rounded-full flex items-center justify-center cursor-pointer shadow-xl hover:scale-105 transition-all duration-300 group"
+      aria-label="Toggle Background Music"
+    >
+      <i data-lucide="volume-x" class="w-5 h-5 text-dark/60"></i>
+    </button>
 
     <!-- HEADER / NAVIGATION --->
     <header id="nav-header" class="fixed top-0 inset-x-0 z-[50] transition-all duration-300 py-6 px-6 md:px-12">
@@ -597,11 +616,46 @@
 
       // PAGE LOADER TIMING
       function setupPageLoader() {
-        setTimeout(() => {
-          const loader = document.getElementById('page-loader');
-          loader.style.opacity = '0';
-          loader.style.pointerEvents = 'none';
-        }, 1100);
+        const bar = document.getElementById('loader-progress-bar');
+        const container = document.getElementById('loader-progress-container');
+        const enterBtn = document.getElementById('enter-btn');
+        const loader = document.getElementById('page-loader');
+
+        // Animate progress bar
+        let progress = 10;
+        const interval = setInterval(() => {
+          progress += Math.floor(Math.random() * 15) + 5;
+          if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            
+            // Show the enter button
+            if (bar) bar.style.width = '100%';
+            setTimeout(() => {
+              if (container) container.style.display = 'none';
+              if (enterBtn) enterBtn.style.display = 'block';
+            }, 300);
+          } else {
+            if (bar) bar.style.width = `${progress}%`;
+          }
+        }, 80);
+
+        if (enterBtn) {
+          enterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // Play Background Music
+            if (window.playBgmDirectly) {
+              window.playBgmDirectly();
+            }
+
+            // Hide page loader with transition
+            if (loader) {
+              loader.style.opacity = '0';
+              loader.style.pointerEvents = 'none';
+            }
+          });
+        }
       }
 
       // NAV VISUAL SCROLL FEEDBACK
@@ -1019,6 +1073,99 @@
           }
         });
       }
+
+      // BACKGROUND MUSIC MANAGER
+      (function() {
+        const bgm = new Audio(getAsset('bgm.mp3'));
+        bgm.loop = true;
+        bgm.volume = 0.45;
+
+        let isPlaying = false;
+        const btn = document.getElementById('bgm-toggle');
+
+        function updateUI() {
+          if (isPlaying) {
+            btn.innerHTML = `
+              <div class="relative w-5 h-5 flex items-end justify-center gap-[3px]">
+                <span class="w-1 bg-red-primary rounded-full animate-audio-bar-1" style="height: 4px;"></span>
+                <span class="w-1 bg-red-primary rounded-full animate-audio-bar-2" style="height: 16px;"></span>
+                <span class="w-1 bg-red-primary rounded-full animate-audio-bar-3" style="height: 8px;"></span>
+              </div>
+            `;
+          } else {
+            btn.innerHTML = `<i data-lucide="volume-x" class="w-5 h-5 text-dark/60"></i>`;
+            if (window.lucide) {
+              window.lucide.createIcons();
+            }
+          }
+        }
+
+        function playBgm() {
+          if (!isPlaying) {
+            bgm.play()
+              .then(() => {
+                isPlaying = true;
+                updateUI();
+                removeInteractionListeners();
+              })
+              .catch(() => {
+                // Autoplay blocked by browser
+              });
+          }
+        }
+
+        window.playBgmDirectly = function() {
+          if (!isPlaying) {
+            bgm.play()
+              .then(() => {
+                isPlaying = true;
+                updateUI();
+                removeInteractionListeners();
+              })
+              .catch((err) => {
+                console.error("Audio playback blocked", err);
+              });
+          }
+        };
+
+        function removeInteractionListeners() {
+          document.removeEventListener('click', playBgm);
+          document.removeEventListener('pointerdown', playBgm);
+          document.removeEventListener('keydown', playBgm);
+        }
+
+        document.addEventListener('click', playBgm);
+        document.addEventListener('pointerdown', playBgm);
+        document.addEventListener('keydown', playBgm);
+
+        bgm.play()
+          .then(() => {
+            isPlaying = true;
+            updateUI();
+            removeInteractionListeners();
+          })
+          .catch(() => {
+            // Autoplay blocked safely
+          });
+
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isPlaying) {
+            bgm.pause();
+            isPlaying = false;
+            updateUI();
+          } else {
+            bgm.play()
+              .then(() => {
+                isPlaying = true;
+                updateUI();
+              })
+              .catch((err) => {
+                console.error("Audio playback blocked:", err);
+              });
+          }
+        });
+      })();
 
       // TABLE BOOKING FORM CONTROLLER
       function submitForm(e) {
