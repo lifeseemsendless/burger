@@ -184,49 +184,58 @@
     </div>
 
     <!-- HERO SECTION -->
-    <section id="s-hero" class="relative min-h-screen bg-dark flex flex-col justify-center items-center px-6 md:px-12 py-24 overflow-hidden">
-      <!-- Cinematic Looping Video Background Behind Everything -->
-      <video
-        src="https://lifeseemsendless.github.io/burger/burgerbg.mp4"
-        autoplay
-        muted
-        loop
-        playsinline
-        class="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none select-none opacity-40 filter brightness-95"
-      ></video>
-
-      <!-- Back Underlay Gradients for depth -->
-      <div class="absolute inset-0 bg-gradient-to-t from-dark/95 via-dark/50 to-dark/85 z-[1] pointer-events-none"></div>
-
+    <section id="s-hero" class="relative min-h-screen bg-cream flex flex-col justify-center items-center px-6 md:px-12 py-24 overflow-hidden">
       <!-- "THE BURGER" Banner behind canvas burger -->
-      <h1 class="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center font-display text-[14vw] md:text-[16vw] leading-none text-red-primary select-none z-[2] tracking-tight whitespace-nowrap overflow-hidden drop-shadow-[0_10px_35px_rgba(0,0,0,0.6)]">
+      <h1 class="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-full text-center font-display text-[15vw] md:text-[18vw] leading-none text-red-primary select-none z-[11] tracking-tight whitespace-nowrap overflow-hidden">
         THE BURGER
       </h1>
 
-      <!-- Decorative badges with high index -->
-      <div class="absolute top-[20%] left-[8%] z-[3] rotate-[-8deg] bg-red-primary text-white font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
+      <!-- High Fidelity WebGL Canvas container -->
+      <div class="relative w-full max-w-[320px] sm:max-w-[480px] md:max-w-[700px] aspect-square z-[12] pointer-events-none mt-10 md:mt-0 transition-transform duration-500 hover:scale-105">
+        <div class="relative w-full h-full flex items-center justify-center">
+          <video
+            id="hero-video-ref"
+            src="https://lifeseemsendless.github.io/burger/burgerexp.mp4"
+            autoplay
+            muted
+            playsinline
+            preload="auto"
+            loop
+            class="absolute pointer-events-none opacity-0 w-1 h-1"
+            crossorigin="anonymous"
+          ></video>
+          <canvas
+            id="chroma-canvas"
+            class="w-full h-full mix-blend-normal transform"
+            style="display: block; max-width: 100%; height: auto; background: transparent;"
+          ></canvas>
+        </div>
+      </div>
+
+      <!-- Decorative badges -->
+      <div class="absolute top-[20%] left-[8%] z-[13] rotate-[-8deg] bg-red-primary text-white font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
         SMASHED FRESH
       </div>
-      <div class="absolute bottom-[24%] right-[8%] z-[3] rotate-[6deg] bg-yellow-primary text-dark font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
+      <div class="absolute bottom-[24%] right-[8%] z-[13] rotate-[6deg] bg-yellow-primary text-dark font-mono text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full shadow-lg">
         BOLD FLAVOR
       </div>
 
-      <!-- Hero descriptions over dark high-contrast backdrop -->
-      <div class="absolute left-10 md:left-14 bottom-[18%] z-[3] max-w-[280px] hidden lg:block text-left">
-        <p class="text-white/80 font-semibold text-xs leading-relaxed uppercase tracking-wider">
+      <!-- Hero descriptions -->
+      <div class="absolute left-10 md:left-14 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-left">
+        <p class="text-dark/75 font-semibold text-xs leading-relaxed uppercase tracking-wider">
           Smashed hot on the flat top, our prime patties lock in ultimate juiciness under a caramelized crust.
         </p>
       </div>
-      <div class="absolute right-10 md:right-14 bottom-[18%] z-[3] max-w-[280px] hidden lg:block text-right">
-        <p class="text-white/80 font-bold text-xs leading-relaxed uppercase tracking-wider">
+      <div class="absolute right-10 md:right-14 bottom-[18%] z-[13] max-w-[280px] hidden lg:block text-right">
+        <p class="text-dark/75 font-bold text-xs leading-relaxed uppercase tracking-wider">
           Topped with melted cheddar and our signature sauce crafted to satisfy your cravings since 2018.
         </p>
       </div>
 
       <!-- CTA buttons -->
-      <div class="flex flex-col sm:flex-row items-center gap-4 z-[3] mt-8 w-full sm:w-auto px-6">
-        <a href="#s-menu" class="w-full sm:w-auto text-center bg-red-primary hover:bg-white hover:text-dark text-white font-bold text-xs uppercase tracking-widest px-9 py-4.5 rounded-full shadow-lg transition-all">Explore Menu</a>
-        <button id="play-video-story" class="w-full sm:w-auto border-2 border-white hover:bg-white hover:text-dark text-white font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-full transition-all flex items-center justify-center gap-2">
+      <div class="flex flex-col sm:flex-row items-center gap-4 z-[13] mt-8 w-full sm:w-auto px-6">
+        <a href="#s-menu" class="w-full sm:w-auto text-center bg-red-primary hover:bg-dark text-white font-bold text-xs uppercase tracking-widest px-9 py-4.5 rounded-full shadow-lg transition-all">Explore Menu</a>
+        <button id="play-video-story" class="w-full sm:w-auto border-2 border-dark hover:bg-dark hover:text-white text-dark font-bold text-xs uppercase tracking-widest px-8 py-4 rounded-full transition-all flex items-center justify-center gap-2">
           <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>Watch Our Story
         </button>
       </div>
